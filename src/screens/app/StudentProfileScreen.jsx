@@ -291,7 +291,7 @@ const StudentProfileScreen = () => {
                             </Typography>
                             {userDetails?.phoneVerified && (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <PhoneVerified sx={{ fontSize: 14 }} />
+                                    <VerifiedUser sx={{ fontSize: 14 }} />
                                     <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                         Verified
                                     </Typography>
