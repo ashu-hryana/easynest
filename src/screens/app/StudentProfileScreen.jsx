@@ -1,12 +1,47 @@
 // src/screens/app/StudentProfileScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Box, Typography, Button, Paper, Avatar, Divider, Chip, Stack, CircularProgress, IconButton, Tooltip, Grid, Alert } from '@mui/material';
+import {
+    Container,
+    Box,
+    Typography,
+    Button,
+    Paper,
+    Avatar,
+    Divider,
+    Chip,
+    Stack,
+    CircularProgress,
+    IconButton,
+    Tooltip,
+    Grid,
+    Alert,
+    Card,
+    useTheme,
+    alpha,
+    Badge
+} from '@mui/material';
+import {
+    Edit as EditIcon,
+    CheckCircle as CheckCircleIcon,
+    Person,
+    Email,
+    Phone,
+    BusinessCenter,
+    School,
+    Language,
+    SmokingRooms,
+    LocalBar,
+    AccountCircle,
+    PhoneVerified
+} from '@mui/icons-material';
+import { format } from 'date-fns';
 import { signOut } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { Edit, CheckCircle, HourglassEmpty } from '@mui/icons-material';
+import { useNotification } from '../../contexts/NotificationContext.jsx';
+import { avatarService } from '../../services/avatarService.js';
 
 const StudentProfileScreen = () => {
     const { currentUser } = useAuth();
