@@ -51,12 +51,108 @@ import { useNotification } from '../../contexts/NotificationContext.jsx';
 import { phoneVerificationService } from '../../services/phoneVerification.js';
 
 const StudentSignUpScreen = () => {
+    const theme = useTheme();
+    const navigate = useNavigate();
+    const { showNotification } = useNotification();
+
+    // Stepper state
+    const [activeStep, setActiveStep] = useState(0);
+    const steps = ['Basic Info', 'Contact Details', 'Verification', 'Complete'];
+
+    // Basic info
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const navigate = useNavigate();
-    const { showNotification } = useNotification();
+    const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+
+    // Contact details
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [countryCode, setCountryCode] = useState('+91');
+    const [nationality, setNationality] = useState('IN');
+    const [dateOfBirth, setDateOfBirth] = useState('');
+    const [gender, setGender] = useState('');
+
+    // Phone verification
+    const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+    const [otpSessionId, setOtpSessionId] = useState('');
+    const [otp, setOtp] = useState('');
+    const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [otpResendLoading, setOtpResendLoading] = useState(false);
+    const [otpError, setOtpError] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+
+    // Loading states
+    const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
+
+    // Form validation errors
+    const [errors, setErrors] = useState({});
+
+    const countryList = phoneVerificationService.getCountryList();
+    const nationalities = phoneVerificationService.getNationalities();
+
+    // Form validation
+    const validateBasicInfo = () => {
+        const newErrors = {};
+
+        if (!fullName.trim()) {
+            newErrors.fullName = 'Full name is required';
+        } else if (fullName.trim().length < 2) {
+            newErrors.fullName = 'Full name must be at least 2 characters';
+        }
+
+        if (!email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            newErrors.email = 'Please enter a valid email';
+        }
+
+        if (!password) {
+            newErrors.password = 'Password is required';
+        } else if (password.length < 8) {
+            newErrors.password = 'Password must be at least 8 characters';
+        } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+            newErrors.password = 'Password must contain uppercase, lowercase, and number';
+        }
+
+        if (!confirmPassword) {
+            newErrors.confirmPassword = 'Please confirm your password';
+        } else if (password !== confirmPassword) {
+            newErrors.confirmPassword = 'Passwords do not match';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const validateContactDetails = () => {
+        const newErrors = {};
+
+        if (!phoneNumber.trim()) {
+            newErrors.phoneNumber = 'Phone number is required';
+        } else if (!/^\d{10}$/.test(phoneNumber.replace(/\D/g, ''))) {
+            newErrors.phoneNumber = 'Please enter a valid 10-digit phone number';
+        }
+
+        if (!dateOfBirth) {
+            newErrors.dateOfBirth = 'Date of birth is required';
+        } else {
+            const age = Math.floor((new Date() - new Date(dateOfBirth)) / (365.25 * 24 * 60 * 60 * 1000));
+            if (age < 16 || age > 100) {
+                newErrors.dateOfBirth = 'You must be between 16 and 100 years old';
+            }
+        }
+
+        if (!gender) {
+            newErrors.gender = 'Gender is required';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleSignUp = async () => {
         if (!fullName || !email || !password) {
