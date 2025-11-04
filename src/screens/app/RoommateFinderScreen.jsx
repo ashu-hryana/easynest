@@ -35,11 +35,33 @@ import RoommateSearchFilters from '../../components/roommates/RoommateSearchFilt
 const RoommateFinderScreen = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    
+    const theme = useTheme();
+
     const [myPost, setMyPost] = useState(null);
     const [otherPosts, setOtherPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const [activeFilters, setActiveFilters] = useState({
+        lookingFor: '',
+        budgetRange: [0, 50000],
+        location: '',
+        smoking: '',
+        drinking: '',
+        vegetarian: '',
+        gender: '',
+        ageRange: [18, 35],
+        moveInDate: null
+    });
+    const [sortBy, setSortBy] = useState('recent');
+    const [stats, setStats] = useState({
+        totalPosts: 0,
+        activeToday: 0,
+        newThisWeek: 0,
+        avgBudget: 0
+    });
+
+    const filterMenuAnchor = useRef(null);
 
     useEffect(() => {
         if (!currentUser) return;
