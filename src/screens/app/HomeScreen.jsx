@@ -157,7 +157,7 @@ const HomeScreen = () => {
                     </Typography>
                 </Box>
 
-                {/* Search Section */}
+                {/* Enhanced Search Section */}
                 <Box
                     component="form"
                     onSubmit={handleSearchSubmit}
@@ -169,6 +169,7 @@ const HomeScreen = () => {
                         placeholder="Search by location, college, or property..."
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
+                        disabled={searchLoading}
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
@@ -176,7 +177,32 @@ const HomeScreen = () => {
                                 </InputAdornment>
                             ),
                             endAdornment: (
-                                <InputAdornment position="end">
+                                <InputAdornment position="end" sx={{ gap: 0.5 }}>
+                                    <Tooltip title="Search near me">
+                                        <IconButton
+                                            onClick={handleNearMeSearch}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: userLocation ? 'primary.50' : 'grey.50',
+                                                color: userLocation ? 'primary.main' : 'text.secondary',
+                                                '&:hover': { bgcolor: userLocation ? 'primary.100' : 'grey.100' }
+                                            }}
+                                        >
+                                            <MyLocation fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Advanced search">
+                                        <IconButton
+                                            onClick={handleAdvancedSearch}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: 'grey.50',
+                                                '&:hover': { bgcolor: 'grey.100' }
+                                            }}
+                                        >
+                                            <Tune fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
                                     <Tooltip title="View Wishlist">
                                         <IconButton
                                             onClick={() => navigate('/wishlist')}
@@ -200,6 +226,37 @@ const HomeScreen = () => {
                         }}
                         sx={{ mb: 2 }}
                     />
+
+                    {/* Quick Actions */}
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<MyLocation />}
+                            onClick={handleNearMeSearch}
+                            sx={{ borderRadius: 2, textTransform: 'none' }}
+                        >
+                            Near Me
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Tune />}
+                            onClick={handleAdvancedSearch}
+                            sx={{ borderRadius: 2, textTransform: 'none' }}
+                        >
+                            Filters
+                        </Button>
+                        {Object.keys(appliedFilters).length > 0 && (
+                            <Chip
+                                label={`${Object.keys(appliedFilters).length} filters applied`}
+                                color="primary"
+                                size="small"
+                                onDelete={() => setAppliedFilters({})}
+                                sx={{ borderRadius: 2 }}
+                            />
+                        )}
+                    </Box>
                 </Box>
 
                 {/* Filter Chips */}
