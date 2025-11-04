@@ -2,20 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    Container, 
-    Box, 
-    Typography, 
-    TextField, 
-    InputAdornment, 
-    Chip, 
-    CircularProgress, 
-    Grid, 
+import {
+    Container,
+    Box,
+    Typography,
+    TextField,
+    InputAdornment,
+    Chip,
+    CircularProgress,
+    Grid,
     Stack,
     IconButton,
-    Tooltip
+    Tooltip,
+    Button,
+    Fade
 } from '@mui/material';
-import { Search, FavoriteBorder } from '@mui/icons-material';
+import { Search, FavoriteBorder, MyLocation, Tune } from '@mui/icons-material';
+
+import AdvancedSearchModal from '../../components/search/AdvancedSearchModal';
+import { searchProperties, getCurrentLocation, getPopularAreas } from '../../services/searchService';
 
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
