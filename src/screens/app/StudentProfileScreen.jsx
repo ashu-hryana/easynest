@@ -8,7 +8,6 @@ import {
     Button,
     Paper,
     Avatar,
-    Divider,
     Chip,
     Stack,
     CircularProgress,
@@ -16,14 +15,18 @@ import {
     Tooltip,
     Grid,
     Alert,
-    Card,
     useTheme,
     alpha,
-    Badge
+    Badge,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    LinearProgress
 } from '@mui/material';
 import {
     Edit as EditIcon,
-    CheckCircle as CheckCircleIcon,
+    CheckCircle,
     Person,
     Email,
     Phone,
@@ -33,15 +36,22 @@ import {
     SmokingRooms,
     LocalBar,
     AccountCircle,
-    PhoneVerified
+    PhoneVerified,
+    PhotoCamera,
+    Close,
+    CloudUpload,
+    LocationOn,
+    CalendarToday,
+    HourglassEmpty
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { signOut } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useNotification } from '../../contexts/NotificationContext.jsx';
 import { avatarService } from '../../services/avatarService.js';
+import { phoneVerificationService } from '../../services/phoneVerification.js';
 
 const StudentProfileScreen = () => {
     const { currentUser } = useAuth();
@@ -51,8 +61,11 @@ const StudentProfileScreen = () => {
 
     const [loading, setLoading] = useState(true);
     const [userDetails, setUserDetails] = useState(null);
-    [avatarPreview, setAvatarPreview] = useState(null);
-    [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     useEffect(() => {
         if (currentUser) {
@@ -87,10 +100,10 @@ const StudentProfileScreen = () => {
     };
 
     const handleAvatarClick = () => {
-        if (profileData.photoURL) {
+        if (userDetails?.photoURL) {
             setAvatarPreview({
                 file: null,
-                preview: profileData.photoURL,
+                preview: userDetails.photoURL,
                 name: 'profile.jpg'
             });
         }
@@ -100,6 +113,7 @@ const StudentProfileScreen = () => {
     const handleAvatarClose = () => {
         setAvatarDialogOpen(false);
         setAvatarPreview(null);
+        setAvatarFile(null);
     };
 
     const handleAvatarSelect = async (file) => {
@@ -122,12 +136,14 @@ const StudentProfileScreen = () => {
             return;
         }
 
+        setIsUploading(true);
+        setUploadProgress(0);
+
         try {
             const result = await avatarService.uploadAvatar(avatarFile, {
                 folder: `avatars/${currentUser.uid}`,
-                tags: ['profile', 'student'],
-                transformation: avatarService.getTransformationOptions('profile'),
-                tags: ['profile', 'student', 'user', 'verified']
+                tags: ['profile', 'student', 'user', 'verified'],
+                transformation: avatarService.getTransformationOptions('profile')
             });
 
             const userDocRef = doc(db, 'users', currentUser.uid);
@@ -144,16 +160,20 @@ const StudentProfileScreen = () => {
             showNotification('Avatar updated successfully!', 'success');
             setAvatarDialogOpen(false);
             setAvatarPreview(null);
+            setAvatarFile(null);
         } catch (error) {
             showNotification('Failed to update avatar. Please try again.', 'error');
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
         }
     };
 
     const handleRemoveAvatar = async () => {
-        if (!profileData.photoURL) return;
+        if (!userDetails?.photoURL) return;
 
         const userDocRef = doc(db, 'users', currentUser.uid);
-        const avatarPublicId = avatarService.extractPublicIdFromUrl(profileData.photoURL);
+        const avatarPublicId = avatarService.extractPublicIdFromUrl(userDetails.photoURL);
 
         try {
             if (avatarPublicId) {
@@ -220,15 +240,30 @@ const StudentProfileScreen = () => {
                 >
                     <Stack spacing={3} alignItems="center">
                         <Box sx={{ position: 'relative' }}>
+                            <Avatar
+                                src={userDetails?.photoURL || ''}
+                                onClick={handleAvatarClick}
+                                sx={{
+                                    width: 120,
+                                    height: 120,
+                                    border: '3px solid rgba(255, 255, 255, 0.3)',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                    }
+                                }}
+                            >
+                                {currentUser?.displayName?.[0] || 'U'}
+                            </Avatar>
                             <Badge
                                 overlap="circular"
                                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                 sx={{
                                     '& .MuiBadge-badge': {
-                                        bgcolor: 'rgba(255, 255, 255, 0.2)',
-                                        '&:hover': {
-                                            bgcolor: 'rgba(255, 255, 255, 0.3)',
-                                        }
+                                        bgcolor: 'rgba(255, 255, 255, 0.9)',
+                                        color: '#FF385C',
+                                        cursor: 'pointer'
                                     }
                                 }}
                             >
@@ -236,7 +271,7 @@ const StudentProfileScreen = () => {
                                     onClick={handleAvatarClick}
                                     sx={{
                                         bgcolor: 'rgba(255, 255, 255, 0.9)',
-                                        color: 'text.primary',
+                                        color: '#FF385C',
                                         '&:hover': {
                                             backgroundColor: 'rgba(255, 255, 255, 1)',
                                         },
@@ -245,24 +280,13 @@ const StudentProfileScreen = () => {
                                     <PhotoCamera />
                                 </IconButton>
                             </Badge>
-                            <Avatar
-                                src={userDetails?.photoURL || ''}
-                                sx={{
-                                    width: 120,
-                                    height: 120,
-                                    border: '3px solid rgba(255, 255, 255, 0.3)',
-                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                }}
-                            >
-                                {currentUser?.displayName?.[0] || 'U'}
-                            </Avatar>
                         </Box>
 
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'white' }}>
+                        <Typography variant="h4" sx={{ fontWeight: 600, color: 'white' }}>
                             {userDetails?.fullName || currentUser?.displayName || 'Student'}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                            <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                 {currentUser?.email}
                             </Typography>
                             {userDetails?.phoneVerified && (
@@ -273,13 +297,13 @@ const StudentProfileScreen = () => {
                                     </Typography>
                                 </Box>
                             )}
+                            {renderVerificationBadge()}
                         </Box>
-                        </Stack>
 
                         {/* Avatar Stats */}
                         {userDetails?.photoURL && (
                             <Box sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
                                     <Chip
                                         size="small"
                                         label={`${userDetails.avatarWidth || '200'}x${userDetails.avatarHeight || '200'}`}
@@ -291,7 +315,7 @@ const StudentProfileScreen = () => {
                                     />
                                     <Chip
                                         size="small"
-                                        label={userDetails.avatarFormat || 'webp' || 'jpg'}
+                                        label={userDetails.avatarFormat || 'webp'}
                                         sx={{
                                             bgcolor: 'rgba(255, 255, 255, 0.1)',
                                             color: 'white',
@@ -300,7 +324,6 @@ const StudentProfileScreen = () => {
                                     />
                                 </Box>
                             </Box>
-                        </Box>
                         )}
 
                         {/* Edit Profile Button */}
@@ -313,7 +336,7 @@ const StudentProfileScreen = () => {
                                 color: 'text.primary',
                                 '&:hover': {
                                     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    color: 'text.primary',
+                                    color: '#FF385C',
                                 },
                                 px: 4,
                                 py: 2,
@@ -372,60 +395,92 @@ const StudentProfileScreen = () => {
                     </Typography>
 
                     <Grid container spacing={3}>
-                        <Grid item xs={12} sm={4}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                                 <Person sx={{ color: 'text.secondary' }} />
-                                <Typography fontWeight="bold" color="text.primary">
-                                    {userDetails?.fullName || 'Not specified'}
-                                </Typography>
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Full Name
+                                    </Typography>
+                                    <Typography fontWeight="bold" color="text.primary">
+                                        {userDetails?.fullName || 'Not specified'}
+                                    </Typography>
+                                </Box>
                             </Box>
                         </Grid>
 
-                        <Grid item xs={12} sm={4}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                                 <Email sx={{ color: 'text.secondary' }} />
-                                <Typography color="text.secondary">
-                                    {currentUser?.email}
-                                </Typography>
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Email
+                                    </Typography>
+                                    <Typography color="text.primary">
+                                        {currentUser?.email}
+                                    </Typography>
+                                </Box>
                             </Box>
                         </Grid>
 
-                        <Grid item xs={12} sm={4}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                                 <Phone sx={{ color: 'text.secondary' }} />
-                                <Typography color="text.secondary">
-                                    {userDetails?.phoneNumber || 'Not specified'}
-                                </Typography>
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Phone
+                                    </Typography>
+                                    <Typography color="text.primary">
+                                        {userDetails?.phoneNumber || 'Not specified'}
+                                    </Typography>
+                                </Box>
                             </Box>
                         </Grid>
 
                         {userDetails?.dateOfBirth && (
-                            <Grid item xs={12} sm={4}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {format(new Date(userDetails.dateOfBirth, 'PPP')}
-                                    </Typography>
+                            <Grid item xs={12} sm={6} md={4}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                    <CalendarToday sx={{ color: 'text.secondary' }} />
+                                    <Box>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Date of Birth
+                                        </Typography>
+                                        <Typography color="text.primary">
+                                            {format(new Date(userDetails.dateOfBirth), 'PPP')}
+                                        </Typography>
+                                    </Box>
                                 </Box>
                             </Grid>
                         )}
 
                         {userDetails?.nationality && (
-                            <Grid item xs={12} sm={4}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {phoneVerificationService.getNationalities().find(n => n.code === userDetails.nationality)?.name || 'Not specified'}
-                                    </Typography>
+                            <Grid item xs={12} sm={6} md={4}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                    <Language sx={{ color: 'text.secondary' }} />
+                                    <Box>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Nationality
+                                        </Typography>
+                                        <Typography color="text.primary">
+                                            {phoneVerificationService.getNationalities().find(n => n.code === userDetails.nationality)?.name || 'Not specified'}
+                                        </Typography>
+                                    </Box>
                                 </Box>
                             </Grid>
                         )}
 
                         {userDetails?.gender && (
-                            <Grid item xs={12} sm={4}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Grid item xs={12} sm={6} md={4}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                                     <Person sx={{ color: 'text.secondary' }} />
-                                    <Typography color="text.secondary">
-                                        {userDetails.gender.charAt(0).toUpperCase() + userDetails.gender.slice(1)}
-                                    </Typography>
+                                    <Box>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Gender
+                                        </Typography>
+                                        <Typography color="text.primary">
+                                            {userDetails.gender.charAt(0).toUpperCase() + userDetails.gender.slice(1)}
+                                        </Typography>
+                                    </Box>
                                 </Box>
                             </Grid>
                         )}
@@ -438,29 +493,42 @@ const StudentProfileScreen = () => {
                         Academic Information
                     </Typography>
 
-                    <Stack spacing={3}>
-                        <Grid container spacing={3}>
-                            <Grid item xs={12} sm={4}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                    <School sx={{ color: 'text.secondary' }} />
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                <LocationOn sx={{ color: 'text.secondary' }} />
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Hometown
+                                    </Typography>
                                     <Typography fontWeight="bold" color="text.primary">
                                         {userDetails?.hometown || 'Not specified'}
                                     </Typography>
                                 </Box>
-                            </Grid>
+                            </Box>
+                        </Grid>
 
-                            <Grid item xs={12} sm={4}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                    <BusinessCenter sx={{ color: 'text.secondary' }} />
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                <BusinessCenter sx={{ color: 'text.secondary' }} />
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        College
+                                    </Typography>
                                     <Typography fontWeight="bold" color="text.primary">
                                         {userDetails?.college || 'Not specified'}
                                     </Typography>
                                 </Box>
-                            </Grid>
+                            </Box>
+                        </Grid>
 
-                            <Grid item xs={12} sm={4}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                    <Book sx={{ color: 'text.secondary' }} />
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                <School sx={{ color: 'text.secondary' }} />
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Course & Year
+                                    </Typography>
                                     <Typography fontWeight="bold" color="text.primary">
                                         {userDetails?.course && userDetails?.year
                                             ? `${userDetails.course}, ${userDetails.year}`
@@ -468,9 +536,9 @@ const StudentProfileScreen = () => {
                                         }
                                     </Typography>
                                 </Box>
-                            </Grid>
+                            </Box>
                         </Grid>
-                    </Stack>
+                    </Grid>
                 </Paper>
 
                 {/* Lifestyle & Habits Section */}
@@ -480,12 +548,12 @@ const StudentProfileScreen = () => {
                     </Typography>
 
                     <Stack spacing={3}>
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary' }}>
+                        <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary', mb: 1 }}>
                                 Languages
                             </Typography>
                             {userDetails?.languages?.length > 0 ? (
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                     {userDetails.languages.map(lang => (
                                         <Chip
                                             key={lang}
@@ -506,8 +574,8 @@ const StudentProfileScreen = () => {
                             )}
                         </Box>
 
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary' }}>
+                        <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary', mb: 1 }}>
                                 Habits
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
@@ -516,8 +584,8 @@ const StudentProfileScreen = () => {
                         </Box>
 
                         {userDetails?.languages?.includes('Haryanvi') && userDetails?.hookah && (
-                            <Box sx={{ mb: 2 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary' }}>
+                            <Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary', mb: 1 }}>
                                     Hookah
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
@@ -528,107 +596,60 @@ const StudentProfileScreen = () => {
                     </Stack>
                 </Paper>
 
-                {/* Contact Information Section */}
-                <Paper sx={{ p: 4, borderRadius: 3, mb: 3 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
-                        Contact Information
-                    </Typography>
-
-                    <Stack spacing={3}>
-                        <Grid container spacing={3}>
-                            <Grid item xs={12}>
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                    <LocationOn sx={{ color: 'text.secondary' }} />
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary' }}>
-                                        Address
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {userDetails?.businessAddress || 'Not specified'}
-                                    </Typography>
-                                </Box>
-                            </Grid>
-
-                            <Grid item xs={12}>
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                    <BusinessCenter sx={{ color: 'text.secondary' }} />
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary' }}>
-                                        Business Type
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {userDetails?.businessType || 'Not specified'}
-                                    </Typography>
-                                </Box>
-                            </Grid>
-
-                            <Grid item xs={12}>
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                    <CalendarToday sx={{ color: 'text.secondary' }} />
-                                    <Typography variant="profile.body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
-                                        Member Since
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary'>
-                                        {userDetails?.joinedAt ? format(new Date(userDetails.joinedAt, 'MMM dd, yyyy') : 'Not specified'}
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                        </Grid>
-                    </Stack>
-                </Paper>
-
                 {/* Stats Section */}
                 <Paper sx={{ p: 4, borderRadius: 3, mb: 3 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: 'userVerificationStatus === 'verified' ? 'success' : 'info' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: verificationStatus === 'verified' ? 'success' : 'info' }}>
                         Profile Stats
                     </Typography>
 
                     <Grid container spacing={3}>
-                        <Grid item xs={6}>
+                        <Grid item xs={6} sm={3}>
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
                                     {userDetails?.totalConnections || 0}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    Total Connections
+                                    Connections
                                 </Typography>
                             </Box>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid item xs={6} sm={3}>
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
                                     {userDetails?.totalListings || 0}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    Total Listings
+                                    Listings
                                 </Typography>
                             </Box>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid item xs={6} sm={3}>
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
                                     {userDetails?.wishlistCount || 0}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary'>
-                                    Wishlist Items
+                                <Typography variant="body2" color="text.secondary">
+                                    Wishlist
                                 </Typography>
                             </Box>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid item xs={6} sm={3}>
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
                                     {userDetails?.profileViews || 0}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary'>
-                                    Profile Views
+                                <Typography variant="body2" color="text.secondary">
+                                    Views
                                 </Typography>
                             </Box>
                         </Grid>
                     </Grid>
                 </Paper>
 
-                {/* Action Button */}
+                {/* Action Buttons */}
                 <Stack spacing={2} sx={{ mb: 4 }}>
                     <Button
                         variant="contained"
@@ -707,72 +728,71 @@ const StudentProfileScreen = () => {
                                         style={{
                                             maxWidth: '100%',
                                             maxHeight: '300px',
-                                            borderRadius: 2
+                                            borderRadius: 8
                                         }}
                                     />
                                 </Box>
-                                <Typography variant="body2" color="text.secondary">
-                                    {avatarPreview.size > 1024 * 1024 && (
-                                        <Alert severity="warning" sx={{ mt: 2 }}>
-                                            Large image detected. Image will be optimized for web viewing.
-                                        </Alert>
-                                    )}
-                                </Box>
-
-                                {/* Upload Options */}
-                                <Stack spacing={2}>
-                                    <Button
-                                        variant="contained"
-                                        component="label"
-                                        onClick={() => document.getElementById('avatar-upload-input')?.click()}
-                                        startIcon={<CloudUpload />}
-                                        disabled={isUploading}
-                                        sx={{ py: 2, borderRadius: 2 }}
-                                    >
-                                        {isUploading ? (
-                                            <>
-                                                <CircularProgress size={20} color="inherit" />
-                                                <span style={{ marginLeft: 8 }}>Uploading...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CloudUpload />
-                                                <span style={{ marginLeft: 8 }}>Choose Photo</span>
-                                            </>
-                                        )}
-                                    </Button>
-
-                                    <Button
-                                        variant="text"
-                                        onClick={handleAvatarClose}
-                                        startIcon={<Close />}
-                                        sx={{ py: 2, borderRadius: 2 }}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </Stack>
-
-                                {/* Upload Progress */}
-                                {isUploading && (
-                                    <Box sx={{ width: '100%', mt: 2 }}>
-                                        <LinearProgress
-                                            variant="determinate"
-                                            value={uploadProgress}
-                                            sx={{
-                                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                                borderRadius: 2
-                                            }}
-                                        />
-                                        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
-                                            {uploadProgress}% uploaded
-                                        </Typography>
-                                    </Box>
+                                {avatarPreview.size > 1024 * 1024 && (
+                                    <Alert severity="warning" sx={{ mt: 2 }}>
+                                        Large image detected. Image will be optimized for web viewing.
+                                    </Alert>
                                 )}
-                            </>
-                        ) : (
+                            </Box>
+
+                            {/* Upload Options */}
+                            <Stack spacing={2}>
+                                <Button
+                                    variant="contained"
+                                    component="label"
+                                    onClick={() => document.getElementById('avatar-upload-input')?.click()}
+                                    startIcon={<CloudUpload />}
+                                    disabled={isUploading}
+                                    sx={{ py: 2, borderRadius: 2 }}
+                                >
+                                    {isUploading ? (
+                                        <>
+                                            <CircularProgress size={20} color="inherit" />
+                                            <span style={{ marginLeft: 8 }}>Uploading...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CloudUpload />
+                                            <span style={{ marginLeft: 8 }}>Choose Photo</span>
+                                        </>
+                                    )}
+                                </Button>
+
+                                <Button
+                                    variant="text"
+                                    onClick={handleAvatarClose}
+                                    startIcon={<Close />}
+                                    sx={{ py: 2, borderRadius: 2 }}
+                                >
+                                    Cancel
+                                </Button>
+                            </Stack>
+
+                            {/* Upload Progress */}
+                            {isUploading && (
+                                <Box sx={{ width: '100%', mt: 2 }}>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={uploadProgress}
+                                        sx={{
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                            borderRadius: 2
+                                        }}
+                                    />
+                                    <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
+                                        {uploadProgress}% uploaded
+                                    </Typography>
+                                </Box>
+                            )}
+                        </>
+                    ) : (
                         <Box sx={{ textAlign: 'center', py: 8 }}>
                             <Typography variant="body1" color="text.secondary">
-                                {avatarPreview ? 'Avatar preview will appear here' : 'Choose a profile picture to upload'}
+                                Choose a profile picture to upload
                             </Typography>
                             <input
                                 type="file"
@@ -782,139 +802,26 @@ const StudentProfileScreen = () => {
                                 id="avatar-upload-input"
                             />
                         </Box>
-                    </DialogContent>
-
-                    <DialogActions sx={{ p: 2 }}>
-                        <Button onClick={handleAvatarClose}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            onClick={handleAvatarSave}
-                            disabled={!avatarFile || isUploading}
-                            startIcon={<CheckCircle />}
-                            sx={{
-                                background: 'linear-gradient(135deg, #FF385C 0%, #E01E5A 100%)'
-                            }}
-                        >
-                            {isUploading ? 'Saving...' : 'Save Avatar'}
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </Box>
-        </Box>
-    );
-};
-
-export default StudentProfileScreen;
-
-    return (
-        <Box sx={{ flexGrow: 1, backgroundColor: '#F8F9FA' }}>
-            <Container maxWidth="md" sx={{ py: 4 }}>
-                <Stack spacing={3}>
-                    {/* --- PROFILE HEADER --- */}
-                    <Paper component={Stack} direction={{xs: 'column', sm: 'row'}} spacing={2} sx={{ p: 3, alignItems: 'center', borderRadius: 3 }}>
-                        {/* Avatar ab userDetails se photoURL lega */}
-                        <Avatar src={userDetails?.photoURL} sx={{ width: 80, height: 80 }}>
-                            {currentUser?.displayName?.[0]}
-                        </Avatar>
-                        <Box sx={{ flexGrow: 1, textAlign: {xs: 'center', sm: 'left'} }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: {xs: 'center', sm: 'flex-start'} }}>
-                                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                                    {currentUser?.displayName || 'Student User'}
-                                </Typography>
-                                {renderVerificationBadge()}
-                            </Box>
-                            <Typography color="text.secondary">
-                                {currentUser?.email}
-                            </Typography>
-                        </Box>
-                        <Tooltip title="Edit Profile">
-                            <IconButton onClick={() => navigate('/profile/edit')}>
-                                <Edit />
-                            </IconButton>
-                        </Tooltip>
-                    </Paper>
-
-                    {/* Verification Status Alerts */}
-                    {verificationStatus === 'pending' && (
-                        <Alert severity="info" icon={<HourglassEmpty fontSize="inherit" />}>
-                            Your verification is pending. We are reviewing your ID.
-                        </Alert>
                     )}
-                    {verificationStatus === 'not_verified' && (
-                        <Alert severity="warning" action={
-                            <Button color="inherit" size="small" onClick={() => navigate('/profile/edit')}>
-                                VERIFY NOW
-                            </Button>
-                        }>
-                            Your profile is not verified. Verify now to find roommates.
-                        </Alert>
-                    )}
+                </DialogContent>
 
-
-                    {/* --- ABOUT ME SECTION --- */}
-                    <Paper sx={{ p: 3, borderRadius: 3 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>About Me</Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            {userDetails?.bio || "No bio added yet. Click edit to tell us about yourself!"}
-                        </Typography>
-                    </Paper>
-
-                    {/* --- DETAILS SECTION (Corrected) --- */}
-                    <Paper sx={{ p: 3, borderRadius: 3 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>Details</Typography>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} sm={4}>
-                                <Typography fontWeight="bold">Hometown</Typography>
-                                <Typography color="text.secondary">{userDetails?.hometown || 'Not specified'}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={4}>
-                                <Typography fontWeight="bold">College</Typography>
-                                <Typography color="text.secondary">{userDetails?.college || 'Not specified'}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={4}>
-                                <Typography fontWeight="bold">Course & Year</Typography>
-                                <Typography color="text.secondary">{userDetails?.course && userDetails?.year ? `${userDetails.course}, ${userDetails.year}` : 'Not specified'}</Typography>
-                            </Grid>
-                        </Grid>
-                    </Paper>
-
-                    {/* --- LIFESTYLE & HABITS SECTION --- */}
-                    <Paper sx={{ p: 3, borderRadius: 3 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>Lifestyle & Habits</Typography>
-                        <Stack spacing={2}>
-                            <Box>
-                                <Typography fontWeight="bold">Languages</Typography>
-                                {userDetails?.languages?.length > 0 ? (
-                                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{mt: 1}}>
-                                        {userDetails.languages.map(lang => <Chip key={lang} label={lang} />)}
-                                    </Stack>
-                                ) : <Typography variant="body2" color="text.secondary">Not specified</Typography>}
-                            </Box>
-                             <Box>
-                                <Typography fontWeight="bold">Smoking/Drinking</Typography>
-                                <Typography variant="body2" color="text.secondary">{userDetails?.habits || 'Not specified'}</Typography>
-                            </Box>
-                            {userDetails?.languages?.includes('Haryanvi') && userDetails?.hookah && (
-                                <Box>
-                                    <Typography fontWeight="bold">Hookah</Typography>
-                                    <Typography variant="body2" color="text.secondary">{userDetails.hookah}</Typography>
-                                </Box>
-                            )}
-                        </Stack>
-                    </Paper>
-
-                    {/* --- LOGOUT BUTTON --- */}
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={handleAvatarClose}>
+                        Cancel
+                    </Button>
                     <Button
                         variant="contained"
-                        onClick={handleLogout}
-                        sx={{ backgroundColor: 'black', '&:hover': { backgroundColor: '#333' } }}
+                        onClick={handleAvatarSave}
+                        disabled={!avatarFile || isUploading}
+                        startIcon={<CheckCircle />}
+                        sx={{
+                            background: 'linear-gradient(135deg, #FF385C 0%, #E01E5A 100%)'
+                        }}
                     >
-                        Log Out
+                        {isUploading ? 'Saving...' : 'Save Avatar'}
                     </Button>
-                </Stack>
-            </Container>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
