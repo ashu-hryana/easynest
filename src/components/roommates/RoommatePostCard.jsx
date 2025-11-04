@@ -61,11 +61,66 @@ const RoommatePostCard = ({ post }) => {
         sendConnectionRequest(post);
     };
 
+    const handleSaveToggle = (e) => {
+        e.stopPropagation();
+        if (saved) {
+            removeItem(post.id);
+            setSaved(false);
+        } else {
+            addItem(post);
+            setSaved(true);
+        }
+    };
+
+    const handleMessage = (e) => {
+        e.stopPropagation();
+        navigate(`/chat/${post.authorId}`);
+    };
+
     // Check karo ki connection pehle se hai ya nahi
-    const existingConnection = connections.find(c => 
+    const existingConnection = connections.find(c =>
         (c.requesterId === currentUser?.uid && c.receiverId === post.authorId) ||
         (c.requesterId === post.authorId && c.receiverId === currentUser?.uid)
     );
+
+    const getPostAge = () => {
+        const now = new Date();
+        const postDate = post.createdAt?.toDate();
+        if (!postDate) return '';
+
+        const diffInDays = Math.floor((now - postDate) / (1000 * 60 * 60 * 24));
+        if (diffInDays === 0) return 'Today';
+        if (diffInDays === 1) return 'Yesterday';
+        if (diffInDays < 7) return `${diffInDays} days ago`;
+        if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+        return `${Math.floor(diffInDays / 30)} months ago`;
+    };
+
+    const getLifestyleChips = () => {
+        const chips = [];
+        if (post.smokingAllowed !== undefined) {
+            chips.push({
+                icon: <SmokingRooms fontSize="small" />,
+                label: post.smokingAllowed ? 'Smoking OK' : 'No Smoking',
+                color: post.smokingAllowed ? 'warning' : 'success'
+            });
+        }
+        if (post.drinkingAllowed !== undefined) {
+            chips.push({
+                icon: <LocalBar fontSize="small" />,
+                label: post.drinkingAllowed ? 'Drinking OK' : 'No Drinking',
+                color: post.drinkingAllowed ? 'warning' : 'success'
+            });
+        }
+        if (post.vegetarian !== undefined) {
+            chips.push({
+                icon: <Restaurant fontSize="small" />,
+                label: post.vegetarian ? 'Veg' : 'Non-Veg',
+                color: post.vegetarian ? 'success' : 'info'
+            });
+        }
+        return chips;
+    };
 
     const renderConnectButton = () => {
         if (existingConnection) {
