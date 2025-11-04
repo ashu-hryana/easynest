@@ -41,10 +41,14 @@ import { useWishlist } from '../../contexts/WishlistContext.jsx';
 
 const RoommatePostCard = ({ post }) => {
     const navigate = useNavigate();
+    const theme = useTheme();
     const { currentUser, currentUserDetails } = useAuth();
-    // connections aur sendConnectionRequest ko context se nikalo
     const { connections, sendConnectionRequest } = useConnections();
     const { showNotification } = useNotification();
+    const { addItem, removeItem, isSaved } = useWishlist();
+
+    const [isHovered, setIsHovered] = useState(false);
+    const [saved, setSaved] = useState(isSaved(post.id));
 
     const handleConnect = () => {
         // Profile completion check
