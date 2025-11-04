@@ -1,11 +1,43 @@
 // src/components/roommates/RoommatePostCard.jsx
-import React from 'react';
-import { Paper, Box, Typography, Avatar, Chip, Button, Stack, Tooltip } from '@mui/material';
-import { LocationOn, AccountBalanceWallet, PersonSearch, CheckCircle } from '@mui/icons-material';
+import React, { useState } from 'react';
+import {
+    Paper,
+    Box,
+    Typography,
+    Avatar,
+    Chip,
+    Button,
+    Stack,
+    Tooltip,
+    IconButton,
+    Badge,
+    useTheme,
+    alpha,
+    Fade,
+    Skeleton
+} from '@mui/material';
+import {
+    LocationOn,
+    AccountBalanceWallet,
+    PersonSearch,
+    CheckCircle,
+    Home,
+    Person,
+    Schedule,
+    Favorite,
+    FavoriteBorder,
+    Message,
+    Star,
+    SmokingRooms,
+    LocalBar,
+    Restaurant
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useConnections } from '../../contexts/ConnectionContext.jsx';
 import { useNotification } from '../../contexts/NotificationContext.jsx';
+import { useWishlist } from '../../contexts/WishlistContext.jsx';
 
 const RoommatePostCard = ({ post }) => {
     const navigate = useNavigate();
