@@ -45,7 +45,7 @@ import { format } from 'date-fns';
 
 // Firebase imports
 import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from '../../firebase';
 import { useNotification } from '../../contexts/NotificationContext.jsx';
 import { phoneVerificationService } from '../../services/phoneVerification.js';
