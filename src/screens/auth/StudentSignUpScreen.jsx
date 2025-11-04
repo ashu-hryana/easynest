@@ -154,35 +154,167 @@ const StudentSignUpScreen = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSignUp = async () => {
-        if (!fullName || !email || !password) {
-            showNotification('Error: Please fill in all fields.'); // Simple alert for now
+    // Navigation functions
+    const handleNext = () => {
+        if (activeStep === 0) {
+            if (validateBasicInfo()) {
+                setActiveStep(1);
+            }
+        } else if (activeStep === 1) {
+            if (validateContactDetails()) {
+                setActiveStep(2);
+            }
+        } else if (activeStep === 2) {
+            setActiveStep(3);
+        }
+    };
+
+    const handleBack = () => {
+        setActiveStep(prev => prev - 1);
+    };
+
+    // Phone verification functions
+    const handleSendOTP = async () => {
+        if (!phoneNumber || errors.phoneNumber) {
             return;
         }
 
+        setOtpLoading(true);
+        setOtpError('');
+
         try {
-            // Web SDK ka syntax use karke user create karo
+            const result = await phoneVerificationService.sendOTP(phoneNumber, countryCode);
+            setOtpSessionId(result.sessionId);
+            setOtpSent(true);
+            setOtpDialogOpen(true);
+            showNotification('OTP sent successfully!');
+        } catch (error) {
+            setOtpError(error.message);
+            showNotification('Failed to send OTP: ' + error.message, 'error');
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async () => {
+        if (!otp || otp.length !== 6) {
+            setOtpError('Please enter a valid 6-digit OTP');
+            return;
+        }
+
+        setOtpLoading(true);
+        setOtpError('');
+
+        try {
+            const result = await phoneVerificationService.verifyOTP(otpSessionId, otp);
+            if (result.success) {
+                setIsPhoneVerified(true);
+                setOtpDialogOpen(false);
+                showNotification('Phone number verified successfully!', 'success');
+            } else {
+                setOtpError(result.message);
+            }
+        } catch (error) {
+            setOtpError(error.message);
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    const handleResendOTP = async () => {
+        setOtpResendLoading(true);
+        setOtpError('');
+
+        try {
+            const result = await phoneVerificationService.resendOTP(otpSessionId);
+            setOtpSessionId(result.sessionId);
+            setOtpSent(true);
+            setOtp('');
+            showNotification('New OTP sent successfully!');
+        } catch (error) {
+            setOtpError(error.message);
+        } finally {
+            setOtpResendLoading(false);
+        }
+    };
+
+    // Enhanced signup with all collected data
+    const handleCompleteSignup = async () => {
+        if (!isPhoneVerified) {
+            showNotification('Please verify your phone number first', 'error');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             if (userCredential.user) {
-                // Profile update karo
+                // Update profile
                 await updateProfile(userCredential.user, {
                     displayName: fullName,
                 });
 
-                // Firestore mein document create karo
+                // Create user document with all details
                 await setDoc(doc(db, "users", userCredential.user.uid), {
                     role: 'student',
-                    fullName: fullName,
-                    email: email,
+                    fullName,
+                    email,
+                    phoneNumber: `${countryCode}${phoneNumber}`,
+                    nationality,
+                    dateOfBirth,
+                    gender,
+                    phoneVerified: isPhoneVerified,
                     createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    profileCompleted: false // User will need to complete profile
                 });
-                
-                // Signup ke baad home page par bhej do
-                navigate('/home'); 
+
+                showNotification('Account created successfully!', 'success');
+                navigate('/home');
             }
         } catch (error) {
             console.error("Sign-up Failed", error);
-            showNotification(`Sign-up Failed: ${error.message}`);
+            showNotification(`Sign-up Failed: ${error.message}`, 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Google signup with enhanced data collection
+    const handleGoogleSignUp = async () => {
+        setGoogleLoading(true);
+        try {
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            // Check if user already exists
+            const userDocRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+                // User already exists, navigate to home
+                navigate('/home');
+            } else {
+                // Create new user with basic info
+                await setDoc(userDocRef, {
+                    role: 'student',
+                    fullName: user.displayName,
+                    email: user.email,
+                    createdAt: serverTimestamp(),
+                    phoneVerified: false,
+                    profileCompleted: false
+                });
+
+                showNotification('Account created! Please complete your profile to access all features.', 'info');
+                navigate('/profile/edit'); // Redirect to profile completion
+            }
+        } catch (error) {
+            console.error("Google Sign-up Failed", error);
+            showNotification(`Google Sign-up Failed: ${error.message}`, 'error');
+        } finally {
+            setGoogleLoading(false);
         }
     };
 
