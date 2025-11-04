@@ -147,56 +147,167 @@ const RoommatePostCard = ({ post }) => {
     };
 
     return (
-        <Paper 
-            variant="outlined" 
-            sx={{ p: 2, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}
+        <Paper
+            elevation={isHovered ? 6 : 2}
+            sx={{
+                p: 3,
+                borderRadius: 3,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease-in-out',
+                position: 'relative',
+                overflow: 'hidden',
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8]
+                }
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={() => navigate(`/user/${post.authorId}`)}
         >
-            <Stack 
-                direction="row" spacing={2} alignItems="center" mb={2}
-                onClick={() => navigate(`/user/${post.authorId}`)}
-                sx={{ cursor: 'pointer' }}
+            {/* Save Button */}
+            <IconButton
+                onClick={handleSaveToggle}
+                sx={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    zIndex: 2,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    color: saved ? 'error.main' : 'text.secondary',
+                    boxShadow: 1,
+                    '&:hover': {
+                        backgroundColor: 'white',
+                        transform: 'scale(1.1)',
+                    },
+                    transition: 'all 0.2s ease-in-out',
+                }}
             >
-                <Avatar src={post.authorPhotoURL}>{post.authorName?.[0]}</Avatar>
-                <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Typography sx={{ fontWeight: 'bold' }}>{post.authorName}</Typography>
-                        {/* Important: Iske liye post create karte waqt 'authorVerificationStatus' save karna zaroori hai */}
-                        {post.authorVerificationStatus === 'verified' && (
-                            <Tooltip title="Verified Profile">
-                                <CheckCircle color="success" sx={{ fontSize: '1rem' }} />
-                            </Tooltip>
-                        )}
+                {saved ? <Favorite /> : <FavoriteBorder />}
+            </IconButton>
+
+            {/* Profile Header */}
+            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+                <Badge
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    badgeContent={
+                        post.authorVerificationStatus === 'verified' ? (
+                            <CheckCircle
+                                color="success"
+                                sx={{ fontSize: 16, backgroundColor: 'white', borderRadius: '50%' }}
+                            />
+                        ) : null
+                    }
+                >
+                    <Avatar
+                        src={post.authorPhotoURL}
+                        sx={{ width: 56, height: 56, border: '2px solid white' }}
+                    >
+                        {post.authorName?.[0]}
+                    </Avatar>
+                </Badge>
+                <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        {post.authorName}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Chip
+                            label={post.lookingFor === 'only_roommate' ? "Has a Room" : "Needs a Room"}
+                            color={post.lookingFor === 'only_roommate' ? "success" : "primary"}
+                            size="small"
+                            icon={post.lookingFor === 'only_roommate' ? <Home /> : <Person />}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            {getPostAge()}
+                        </Typography>
                     </Box>
-                    <Chip 
-                        label={post.lookingFor === 'only_roommate' ? "Has a Room" : "Needs a Room"}
-                        color={post.lookingFor === 'only_roommate' ? "success" : "info"}
-                        size="small"
-                        sx={{ mt: 0.5 }}
-                    />
                 </Box>
             </Stack>
 
-            <Stack spacing={1.5} sx={{ flexGrow: 1 }}>
-                <Stack direction="row" alignItems="center" spacing={1} color="text.secondary">
-                    <LocationOn fontSize="small" />
-                    <Typography variant="body2">{post.location}</Typography>
-                </Stack>
-                <Stack direction="row" alignItems="center" spacing={1} color="text.secondary">
-                    <AccountBalanceWallet fontSize="small" />
-                    <Typography variant="body2">Budget: ₹{post.budget}/month</Typography>
-                </Stack>
-                <Stack direction="row" alignItems="flex-start" spacing={1} color="text.secondary">
-                    <PersonSearch fontSize="small" sx={{ mt: 0.5 }} />
-                    <Typography variant="body2" sx={{ 
-                        display: '-webkit-box', overflow: 'hidden',
-                        WebkitBoxOrient: 'vertical', WebkitLineClamp: 3,
-                    }}>
-                        {post.preferences || 'No preferences mentioned.'}
+            {/* Key Information */}
+            <Stack spacing={2} sx={{ flexGrow: 1 }}>
+                {/* Location */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LocationOn sx={{ fontSize: 18, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                        {post.location}
                     </Typography>
-                </Stack>
+                </Box>
+
+                {/* Budget */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AccountBalanceWallet sx={{ fontSize: 18, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                        Budget: <Typography component="span" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                            ₹{post.budget}
+                        </Typography>/month
+                    </Typography>
+                </Box>
+
+                {/* Preferences */}
+                {post.preferences && (
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                        <PersonSearch sx={{ fontSize: 18, color: 'text.secondary', mt: 0.5 }} />
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                                display: '-webkit-box',
+                                overflow: 'hidden',
+                                WebkitBoxOrient: 'vertical',
+                                WebkitLineClamp: 2,
+                                lineHeight: 1.4
+                            }}
+                        >
+                            {post.preferences}
+                        </Typography>
+                    </Box>
+                )}
+
+                {/* Lifestyle Chips */}
+                {getLifestyleChips().length > 0 && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                        {getLifestyleChips().map((chip, index) => (
+                            <Chip
+                                key={index}
+                                icon={chip.icon}
+                                label={chip.label}
+                                size="small"
+                                color={chip.color}
+                                variant="outlined"
+                                sx={{ fontSize: '0.7rem', height: 24 }}
+                            />
+                        ))}
+                    </Box>
+                )}
             </Stack>
-            
-            {currentUser?.uid !== post.authorId && renderConnectButton()}
+
+            {/* Action Buttons */}
+            {currentUser?.uid !== post.authorId && (
+                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                    {renderConnectButton()}
+                    {existingConnection?.status === 'accepted' && (
+                        <Tooltip title="Send Message">
+                            <IconButton
+                                onClick={handleMessage}
+                                sx={{
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                    color: 'primary.main',
+                                    '&:hover': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                    }
+                                }}
+                            >
+                                <Message />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Box>
+            )}
         </Paper>
     );
 };
