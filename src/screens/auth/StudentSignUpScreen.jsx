@@ -1,15 +1,54 @@
 // /src/screens/auth/StudentSignUpScreen.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { Box, Typography, Button, Container, TextField, IconButton, InputAdornment, Divider, Link } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Visibility, VisibilityOff } from '@mui/icons-material';
-import GoogleIcon from '@mui/icons-material/Google';
+import {
+    Box,
+    Typography,
+    Button,
+    Container,
+    TextField,
+    IconButton,
+    InputAdornment,
+    Divider,
+    Link,
+    Stepper,
+    Step,
+    StepLabel,
+    Paper,
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel,
+    Chip,
+    Alert,
+    CircularProgress,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    useTheme,
+    alpha
+} from '@mui/material';
+import {
+    ArrowBack as ArrowBackIcon,
+    Visibility,
+    VisibilityOff,
+    Google as GoogleIcon,
+    Phone,
+    CheckCircle,
+    Refresh,
+    Info,
+    LocationOn,
+    Language
+} from '@mui/icons-material';
+import { format } from 'date-fns';
 
-// Firebase Web SDK se functions import karo
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+// Firebase imports
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from '../../firebase'; // Hamari config file se
+import { auth, db } from '../../firebase';
 import { useNotification } from '../../contexts/NotificationContext.jsx';
+import { phoneVerificationService } from '../../services/phoneVerification.js';
 
 const StudentSignUpScreen = () => {
     const [fullName, setFullName] = useState('');
