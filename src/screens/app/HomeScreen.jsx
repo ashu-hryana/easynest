@@ -348,17 +348,80 @@ const HomeScreen = () => {
                     </Box>
                 )}
 
+                {/* Popular Areas Section */}
+                {popularAreas.length > 0 && (
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
+                            Popular Areas
+                        </Typography>
+                        <Box sx={{
+                            display: 'flex',
+                            overflowX: 'auto',
+                            gap: 2,
+                            pb: 1,
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            scrollbarWidth: 'none'
+                        }}>
+                            {popularAreas.slice(0, 6).map((area, index) => (
+                                <Box
+                                    key={area.area}
+                                    onClick={() => {
+                                        setSearchText(area.area);
+                                        navigate(`/search?q=${encodeURIComponent(area.area)}`);
+                                    }}
+                                    sx={{
+                                        flex: '0 0 auto',
+                                        p: 2,
+                                        bgcolor: 'grey.50',
+                                        borderRadius: 2,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease-in-out',
+                                        '&:hover': {
+                                            bgcolor: 'primary.50',
+                                            transform: 'translateY(-2px)'
+                                        },
+                                        minWidth: '120px',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
+                                        {area.area}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        {area.count} properties
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                )}
+
                 {/* Empty State */}
                 {!loading && listings.length === 0 && (
                     <Box sx={{ textAlign: 'center', py: 8 }}>
                         <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
                             No properties available yet
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
                             Check back soon for new listings!
                         </Typography>
+                        <Button
+                            variant="contained"
+                            onClick={handleAdvancedSearch}
+                            sx={{ borderRadius: 3 }}
+                        >
+                            Try Advanced Search
+                        </Button>
                     </Box>
                 )}
+
+                {/* Advanced Search Modal */}
+                <AdvancedSearchModal
+                    open={advancedSearchOpen}
+                    onClose={() => setAdvancedSearchOpen(false)}
+                    onApplyFilters={handleApplyFilters}
+                    initialFilters={appliedFilters}
+                />
             </Container>
         </Box>
     );
