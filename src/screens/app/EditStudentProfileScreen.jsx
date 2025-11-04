@@ -1,11 +1,68 @@
 // src/screens/app/EditStudentProfileScreen.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Container, Box, Typography, TextField, Button, CircularProgress,
-    Paper, Stack, FormControl, InputLabel, Select, MenuItem, OutlinedInput, Chip, Avatar, Badge, IconButton, Alert, Divider
+    Container,
+    Box,
+    Typography,
+    TextField,
+    Button,
+    CircularProgress,
+    Paper,
+    Stack,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    OutlinedInput,
+    Chip,
+    Avatar,
+    Badge,
+    IconButton,
+    Alert,
+    Divider,
+    useTheme,
+    alpha,
+    LinearProgress,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Card,
+    CardContent,
+    useMediaQuery,
+    Fab
 } from '@mui/material';
-import { Edit, CloudUpload, CheckCircle, HourglassEmpty } from '@mui/icons-material';
+import {
+    Edit as EditIcon,
+    CloudUpload as CloudUploadIcon,
+    CheckCircle as CheckCircleIcon,
+    PhotoCamera as PhotoCameraIcon,
+    Close as CloseIcon,
+    Delete as DeleteIcon,
+    Crop,
+    Rotate90,
+    Visibility,
+    VisibilityOff,
+    Person,
+    Email,
+    Phone,
+    BusinessCenter,
+    School,
+    Language,
+    SmokingRooms,
+    LocalBar,
+    AccountCircle
+} from '@mui/icons-material';
+import { format } from 'date-fns';
+
+// Firebase imports
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useNotification } from '../../contexts/NotificationContext.jsx';
+import PlacesAutocomplete from '../../components/common/PlacesAutocomplete';
+import { avatarService } from '../../services/avatarService.js';
 // --- YEH LINE UPDATE HUI HAI ---
 import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
