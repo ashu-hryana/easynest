@@ -319,56 +319,387 @@ const StudentSignUpScreen = () => {
     };
 
     return (
-        <Container component="main" maxWidth="xs" sx={{ mt: 4, mb: 4 }}>
-            <IconButton onClick={() => navigate(-1)} sx={{ alignSelf: 'flex-start', mb: 2 }}>
+        <Container maxWidth="md" sx={{ mt: 4, mb: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <IconButton onClick={() => navigate(-1)} sx={{ mb: 2 }}>
                 <ArrowBackIcon />
             </IconButton>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold' }}>
-                    Create your account
-                </Typography>
-                <Typography sx={{ color: 'text.secondary', textAlign: 'center', mt: 1, mb: 3 }}>
-                    Let's get you started on finding your perfect stay.
-                </Typography>
 
-                <TextField
-                    margin="normal" required fullWidth id="fullName" label="Full Name"
-                    value={fullName} onChange={(e) => setFullName(e.target.value)}
-                />
-                <TextField
-                    margin="normal" required fullWidth id="email" label="Email Address"
-                    type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                />
-                <TextField
-                    margin="normal" required fullWidth label="Password"
-                    type={isPasswordVisible ? 'text' : 'password'}
-                    value={password} onChange={(e) => setPassword(e.target.value)}
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="end">
-                                <IconButton onClick={() => setIsPasswordVisible(!isPasswordVisible)} edge="end">
-                                    {isPasswordVisible ? <VisibilityOff /> : <Visibility />}
-                                </IconButton>
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <Button fullWidth variant="contained" onClick={handleSignUp}
-                    sx={{ mt: 3, mb: 2, py: 1.5, borderRadius: '30px', backgroundColor: 'black' }}>
-                    Create Account
-                </Button>
+            <Paper sx={{ p: 4, borderRadius: 3, flex: 1 }}>
+                <Box sx={{ mb: 4, textAlign: 'center' }}>
+                    <Typography component="h1" variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                        Create Student Account 🎓
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                        Join thousands of students finding their perfect stay
+                    </Typography>
+                </Box>
 
-                <Link component={RouterLink} to="/login" variant="body2" sx={{ textDecoration: 'underline' }}>
-                    Already have an account? Log in
-                </Link>
+                {/* Stepper */}
+                <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+                    {steps.map((label) => (
+                        <Step key={label}>
+                            <StepLabel>{label}</StepLabel>
+                        </Step>
+                    ))}
+                </Stepper>
 
-                <Divider sx={{ my: 2, width: '100%' }}>OR</Divider>
+                {/* Step Content */}
+                <Box sx={{ mb: 4 }}>
+                    {activeStep === 0 && (
+                        <Box>
+                            <Typography variant="h6" sx={{ mb: 3 }}>
+                                Basic Information
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                label="Full Name"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                error={!!errors.fullName}
+                                helperText={errors.fullName}
+                                sx={{ mb: 2 }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Email Address"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                error={!!errors.email}
+                                helperText={errors.email}
+                                sx={{ mb: 2 }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Password"
+                                type={isPasswordVisible ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                error={!!errors.password}
+                                helperText={errors.password}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton onClick={() => setIsPasswordVisible(!isPasswordVisible)} edge="end">
+                                                {isPasswordVisible ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={{ mb: 2 }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Confirm Password"
+                                type={isConfirmPasswordVisible ? 'text' : 'password'}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                error={!!errors.confirmPassword}
+                                helperText={errors.confirmPassword}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton onClick={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)} edge="end">
+                                                {isConfirmPasswordVisible ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                        </Box>
+                    )}
 
-                <Button fullWidth variant="outlined" startIcon={<GoogleIcon />}
-                    sx={{ py: 1.5, borderRadius: '30px', color: 'black', borderColor: 'grey.400' }}>
-                    Continue with Google
-                </Button>
-            </Box>
+                    {activeStep === 1 && (
+                        <Box>
+                            <Typography variant="h6" sx={{ mb: 3 }}>
+                                Contact Details
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                <FormControl sx={{ minWidth: 120 }}>
+                                    <InputLabel>Country</InputLabel>
+                                    <Select
+                                        value={countryCode}
+                                        onChange={(e) => setCountryCode(e.target.value)}
+                                        label="Country"
+                                    >
+                                        {countryList.map((country) => (
+                                            <MenuItem key={country.code} value={country.code}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <span>{country.flag}</span>
+                                                    <span>{country.code}</span>
+                                                </Box>
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <TextField
+                                    fullWidth
+                                    label="Phone Number"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                    error={!!errors.phoneNumber}
+                                    helperText={errors.phoneNumber}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Phone />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Box>
+
+                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                <FormControl sx={{ flex: 1 }}>
+                                    <InputLabel>Nationality</InputLabel>
+                                    <Select
+                                        value={nationality}
+                                        onChange={(e) => setNationality(e.target.value)}
+                                        label="Nationality"
+                                    >
+                                        {nationalities.map((nat) => (
+                                            <MenuItem key={nat.code} value={nat.code}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <span>{nat.flag}</span>
+                                                    <span>{nat.name}</span>
+                                                </Box>
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl sx={{ flex: 1 }}>
+                                    <InputLabel>Gender</InputLabel>
+                                    <Select
+                                        value={gender}
+                                        onChange={(e) => setGender(e.target.value)}
+                                        label="Gender"
+                                        error={!!errors.gender}
+                                    >
+                                        <MenuItem value="male">Male</MenuItem>
+                                        <MenuItem value="female">Female</MenuItem>
+                                        <MenuItem value="other">Other</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
+
+                            <TextField
+                                fullWidth
+                                label="Date of Birth"
+                                type="date"
+                                value={dateOfBirth}
+                                onChange={(e) => setDateOfBirth(e.target.value)}
+                                error={!!errors.dateOfBirth}
+                                helperText={errors.dateOfBirth}
+                                InputLabelProps={{ shrink: true }}
+                                sx={{ mb: 2 }}
+                            />
+                        </Box>
+                    )}
+
+                    {activeStep === 2 && (
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="h6" sx={{ mb: 3 }}>
+                                Phone Verification
+                            </Typography>
+
+                            <Alert severity="info" sx={{ mb: 3 }}>
+                                <Typography variant="body2">
+                                    We need to verify your phone number to ensure the security of your account.
+                                </Typography>
+                            </Alert>
+
+                            <Box sx={{ p: 3, backgroundColor: alpha(theme.palette.primary.main, 0.05), borderRadius: 2, mb: 3 }}>
+                                <Typography variant="body1" sx={{ mb: 2 }}>
+                                    Phone Number: <strong>{countryCode} {phoneNumber}</strong>
+                                </Typography>
+
+                                {isPhoneVerified ? (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'success.main' }}>
+                                        <CheckCircle />
+                                        <Typography variant="body1" sx={{ color: 'success.main' }}>
+                                            Phone number verified successfully!
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Box>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleSendOTP}
+                                            disabled={otpLoading || !phoneNumber}
+                                            startIcon={otpLoading ? <CircularProgress size={16} /> : <Phone />}
+                                            sx={{ mb: 2 }}
+                                        >
+                                            {otpLoading ? 'Sending...' : 'Send OTP'}
+                                        </Button>
+
+                                        {otpSent && (
+                                            <Typography variant="body2" color="text.secondary">
+                                                Check your phone for the 6-digit verification code
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+
+                    {activeStep === 3 && (
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="h6" sx={{ mb: 3 }}>
+                                Account Ready!
+                            </Typography>
+
+                            <CheckCircle sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
+
+                            <Typography variant="body1" sx={{ mb: 1 }}>
+                                Your student account has been created successfully!
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                You can now start searching for your perfect stay.
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
+
+                {/* Navigation Buttons */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+                    <Button
+                        disabled={activeStep === 0}
+                        onClick={handleBack}
+                        sx={{ visibility: activeStep === 0 ? 'hidden' : 'visible' }}
+                    >
+                        Back
+                    </Button>
+
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        {activeStep < 2 && (
+                            <Button
+                                variant="contained"
+                                onClick={handleNext}
+                                sx={{
+                                    background: 'linear-gradient(135deg, #FF385C 0%, #E01E5A 100%)',
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg, #E01E5A 0%, #D10134 100%)',
+                                    }
+                                }}
+                            >
+                                {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+                            </Button>
+                        )}
+
+                        {activeStep === 2 && (
+                            <Button
+                                variant="contained"
+                                onClick={handleCompleteSignup}
+                                disabled={!isPhoneVerified || loading}
+                                sx={{
+                                    background: 'linear-gradient(135deg, #FF385C 0%, #E01E5A 100%)',
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg, #E01E5A 0%, #D10134 100%)',
+                                    }
+                                }}
+                            >
+                                {loading ? 'Creating Account...' : 'Complete Signup'}
+                            </Button>
+                        )}
+
+                        {activeStep === 3 && (
+                            <Button
+                                variant="contained"
+                                onClick={() => navigate('/home')}
+                                sx={{
+                                    background: 'linear-gradient(135deg, #FF385C 0%, #E01E5A 100%)',
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg, #E01E5A 0%, #D10134 100%)',
+                                    }
+                                }}
+                            >
+                                Go to Dashboard
+                            </Button>
+                        )}
+                    </Box>
+                </Box>
+
+                {/* Google Sign Up */}
+                {activeStep === 0 && (
+                    <>
+                        <Divider sx={{ my: 3 }}>OR</Divider>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            onClick={handleGoogleSignUp}
+                            disabled={googleLoading}
+                            startIcon={googleLoading ? <CircularProgress size={16} /> : <GoogleIcon />}
+                            sx={{ py: 1.5, borderRadius: 2 }}
+                        >
+                            {googleLoading ? 'Signing up...' : 'Continue with Google'}
+                        </Button>
+                    </>
+                )}
+
+                <Box sx={{ mt: 3, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                        Already have an account?{' '}
+                        <Link component={RouterLink} to="/login" sx={{ fontWeight: 600 }}>
+                            Log in
+                        </Link>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Are you a property owner?{' '}
+                        <Link component={RouterLink} to="/owner-signup" sx={{ fontWeight: 600 }}>
+                            Sign up as owner
+                        </Link>
+                    </Typography>
+                </Box>
+            </Paper>
+
+            {/* OTP Dialog */}
+            <Dialog open={otpDialogOpen} onClose={() => setOtpDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Verify Phone Number</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        Enter the 6-digit code sent to {countryCode} {phoneNumber}
+                    </Typography>
+
+                    <TextField
+                        fullWidth
+                        label="Enter OTP"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        error={!!otpError}
+                        helperText={otpError}
+                        sx={{ mb: 2 }}
+                    />
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Didn't receive the code?
+                        </Typography>
+                        <Button
+                            variant="text"
+                            onClick={handleResendOTP}
+                            disabled={otpResendLoading}
+                            startIcon={otpResendLoading ? <CircularProgress size={16} /> : <Refresh />}
+                        >
+                            Resend OTP
+                        </Button>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOtpDialogOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleVerifyOTP}
+                        disabled={otpLoading || otp.length !== 6}
+                        startIcon={otpLoading ? <CircularProgress size={16} /> : <CheckCircle />}
+                    >
+                        {otpLoading ? 'Verifying...' : 'Verify'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 };
