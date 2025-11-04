@@ -67,11 +67,7 @@ class AvatarService {
 
         const formData = new FormData();
         formData.append('file', file);
-
-        // Add upload options
-        if (options.upload_preset) {
-            formData.append('upload_preset', options.upload_preset || this.CLOUDINARY_UPLOAD_PRESET);
-        }
+        formData.append('upload_preset', this.CLOUDINARY_UPLOAD_PRESET);
 
         // Add folder structure
         if (options.folder) {
@@ -430,8 +426,7 @@ class AvatarService {
                 };
                 img.src = e.target.result;
             };
-            };
-            reader.readAsDataURL(e.target.result);
+            reader.readAsDataURL(file);
         });
     }
 
@@ -482,7 +477,7 @@ class AvatarService {
                 };
                 img.src = e.target.result;
             };
-            reader.readAsDataURL(e.target.result);
+            reader.readAsDataURL(file);
         });
     }
 }
