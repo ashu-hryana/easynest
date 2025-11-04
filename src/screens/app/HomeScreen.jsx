@@ -80,72 +80,163 @@ const HomeScreen = () => {
     const newListings = listings.slice(4);
 
     return (
-        <Box sx={{ flexGrow: 1, backgroundColor: '#F8F9FA', pb: '80px' }}>
-            <Container maxWidth="lg" sx={{ pt: 2, px: { xs: 1, sm: 2 } }}>
-                <Stack 
-                    direction="row" 
-                    spacing={1} 
-                    alignItems="center" 
-                    component="form" 
-                    onSubmit={handleSearchSubmit} 
-                    sx={{ mb: 1 }}
+        <Box sx={{ flexGrow: 1, backgroundColor: 'background.default', minHeight: '100vh', pb: { xs: '80px', md: 0 } }}>
+            <Container maxWidth="md" sx={{ pt: { xs: 2, md: 3 }, px: { xs: 2, md: 3 } }}>
+                {/* Header Section */}
+                <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
+                        Hi there! 👋
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'text.secondary', mb: 3 }}>
+                        Find your perfect rental
+                    </Typography>
+                </Box>
+
+                {/* Search Section */}
+                <Box
+                    component="form"
+                    onSubmit={handleSearchSubmit}
+                    sx={{ mb: 3 }}
                 >
                     <TextField
                         fullWidth
                         variant="outlined"
-                        placeholder="Search by college, city, or locality..."
+                        placeholder="Search by location, college, or property..."
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                         InputProps={{
-                            startAdornment: (<InputAdornment position="start"><Search /></InputAdornment>),
-                            sx: { borderRadius: '25px', backgroundColor: 'white' }
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search sx={{ color: 'text.secondary' }} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <Tooltip title="View Wishlist">
+                                        <IconButton
+                                            onClick={() => navigate('/wishlist')}
+                                            sx={{
+                                                bgcolor: 'grey.50',
+                                                '&:hover': { bgcolor: 'grey.100' }
+                                            }}
+                                        >
+                                            <FavoriteBorder />
+                                        </IconButton>
+                                    </Tooltip>
+                                </InputAdornment>
+                            ),
+                            sx: {
+                                borderRadius: 3,
+                                backgroundColor: 'background.paper',
+                                boxShadow: 1,
+                                '&:hover': { boxShadow: 2 },
+                                '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                            }
                         }}
+                        sx={{ mb: 2 }}
                     />
-                    <Tooltip title="View Wishlist">
-                        <IconButton onClick={() => navigate('/wishlist')} sx={{ bgcolor: 'white', p: 1.5, boxShadow: 1 }}>
-                            <FavoriteBorder />
-                        </IconButton>
-                    </Tooltip>
-                </Stack>
+                </Box>
 
-                <Box sx={{ display: 'flex', overflowX: 'auto', py: 2, '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
+                {/* Filter Chips */}
+                <Box sx={{
+                    display: 'flex',
+                    overflowX: 'auto',
+                    py: 1,
+                    mb: 3,
+                    gap: 2,
+                    '&::-webkit-scrollbar': { display: 'none' },
+                    scrollbarWidth: 'none'
+                }}>
                     {FILTERS.map((filter) => (
                         <Chip
                             key={filter}
                             label={filter}
                             onClick={() => setActiveFilter(filter)}
                             sx={{
-                                mr: 1,
                                 flexShrink: 0,
-                                backgroundColor: activeFilter === filter ? 'black' : '#e0e0e0',
-                                color: activeFilter === filter ? 'white' : 'black',
-                                '&:hover': { backgroundColor: activeFilter === filter ? '#333' : '#d1d1d1' }
+                                backgroundColor: activeFilter === filter ? 'primary.main' : 'grey.100',
+                                color: activeFilter === filter ? 'white' : 'text.primary',
+                                fontWeight: activeFilter === filter ? 600 : 500,
+                                '&:hover': {
+                                    backgroundColor: activeFilter === filter ? 'primary.dark' : 'grey.200'
+                                },
+                                px: 2,
+                                py: 1,
                             }}
                         />
                     ))}
                 </Box>
-                
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>Featured Stays</Typography>
-                    <Box sx={{ display: 'flex', overflowX: 'auto', py: 2, gap: 2, '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
-                        {featuredListings.map(item => (
-                            <Box key={item.id} sx={{ flex: '0 0 85%', maxWidth: '320px' }}>
-                                <FeaturedCard item={item} />
-                            </Box>
-                        ))}
-                    </Box>
-                </Box>
 
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>New on EasyNest</Typography>
-                    <Grid container spacing={2}>
-                        {newListings.map(item => (
-                            <Grid item key={item.id} xs={12} sm={6}>
-                                <ListingRow item={item} />
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+                {/* Featured Stays Section */}
+                {featuredListings.length > 0 && (
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
+                            Featured Stays
+                        </Typography>
+                        <Box sx={{
+                            display: 'flex',
+                            overflowX: 'auto',
+                            gap: 3,
+                            pb: 1,
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            scrollbarWidth: 'none'
+                        }}>
+                            {featuredListings.map(item => (
+                                <Box key={item.id} sx={{
+                                    flex: { xs: '0 0 75%', sm: '0 0 60%', md: '0 0 40%' },
+                                    maxWidth: '380px'
+                                }}>
+                                    <FeaturedCard item={item} />
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                )}
+
+                {/* New Listings Section */}
+                {newListings.length > 0 && (
+                    <Box>
+                        <Typography variant="h4" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
+                            New on EasyNest
+                        </Typography>
+                        <Grid container spacing={3}>
+                            {newListings.slice(0, 6).map(item => (
+                                <Grid item key={item.id} xs={12} sm={6} md={4}>
+                                    <ListingRow item={item} />
+                                </Grid>
+                            ))}
+                        </Grid>
+
+                        {newListings.length > 6 && (
+                            <Box sx={{ textAlign: 'center', mt: 3 }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => navigate('/search')}
+                                    sx={{
+                                        borderRadius: 3,
+                                        px: 4,
+                                        py: 1.5,
+                                        fontWeight: 500
+                                    }}
+                                >
+                                    View all properties
+                                </Button>
+                            </Box>
+                        )}
+                    </Box>
+                )}
+
+                {/* Empty State */}
+                {!loading && listings.length === 0 && (
+                    <Box sx={{ textAlign: 'center', py: 8 }}>
+                        <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
+                            No properties available yet
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            Check back soon for new listings!
+                        </Typography>
+                    </Box>
+                )}
             </Container>
         </Box>
     );
