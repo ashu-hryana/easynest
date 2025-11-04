@@ -68,13 +68,68 @@ const HomeScreen = () => {
             setLoading(false);
         });
 
+        // Get popular areas from listings
+        const areas = getPopularAreas(listingsArray);
+        setPopularAreas(areas);
+
         return () => unsubscribe();
     }, []);
 
-    const handleSearchSubmit = (e) => {
+    // Get user location on mount
+    useEffect(() => {
+        const getUserLocation = async () => {
+            try {
+                const location = await getCurrentLocation();
+                setUserLocation(location);
+            } catch (error) {
+                console.log('Location access denied or unavailable');
+            }
+        };
+        getUserLocation();
+    }, []);
+
+    const handleSearchSubmit = async (e) => {
         e.preventDefault();
         if (searchText.trim()) {
-            navigate(`/search?q=${searchText.trim()}`);
+            setSearchLoading(true);
+            try {
+                const searchResult = await searchProperties(searchText.trim(), {
+                    ...appliedFilters,
+                    useCurrentLocation: !searchText.trim()
+                });
+                navigate(`/search?q=${searchText.trim()}&filters=${encodeURIComponent(JSON.stringify(appliedFilters))}`);
+            } catch (error) {
+                console.error('Search error:', error);
+            } finally {
+                setSearchLoading(false);
+            }
+        }
+    };
+
+    const handleAdvancedSearch = () => {
+        setAdvancedSearchOpen(true);
+    };
+
+    const handleApplyFilters = (filters) => {
+        setAppliedFilters(filters);
+        // Trigger search with new filters
+        const query = searchText.trim() || 'Near Me';
+        navigate(`/search?q=${query}&filters=${encodeURIComponent(JSON.stringify(filters))}`);
+    };
+
+    const handleNearMeSearch = async () => {
+        if (!userLocation) {
+            try {
+                const location = await getCurrentLocation();
+                setUserLocation(location);
+                navigate('/search?useLocation=true');
+            } catch (error) {
+                console.error('Could not get location:', error);
+                // Fallback to location-based search
+                setSearchText('Near Me');
+            }
+        } else {
+            navigate('/search?useLocation=true');
         }
     };
 
