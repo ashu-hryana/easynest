@@ -241,11 +241,11 @@ export class PhoneVerificationService {
             { code: 'KR', name: 'Korean', flag: '🇰🇷' },
             { code: 'RU', name: 'Russian', flag: '🇷🇺' },
             { code: 'BR', name: 'Brazilian', flag: '🇧🇷' },
-            { code': 'MX', name: 'Mexican', flag: '🇲🇽' },
-            { code': 'ZA', name: 'South African', flag: '🇿🇦' },
+            { code: 'MX', name: 'Mexican', flag: '🇲🇽' },
+            { code: 'ZA', name: 'South African', flag: '🇿🇦' },
             { code: 'NG', name: 'Nigerian', flag: '🇳🇬' },
-            { code': 'EG', name: 'Egyptian', flag: '🇪🇬' },
-            { code': 'KE', name: 'Kenyan', flag: '🇰🇪' }
+            { code: 'EG', name: 'Egyptian', flag: '🇪🇬' },
+            { code: 'KE', name: 'Kenyan', flag: '🇰🇪' }
         ];
     }
 
