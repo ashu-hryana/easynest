@@ -29,45 +29,124 @@ const FeaturedCard = ({ item }) => {
   };
 
   return (
-    <Box sx={{ position: 'relative', width: 220, marginRight: 2 }}>
+    <Box sx={{ position: 'relative', width: '100%' }}>
       <IconButton
         onClick={handleWishlistToggle}
         sx={{
           position: 'absolute',
-          top: 8,
-          right: 8,
+          top: 12,
+          right: 12,
           zIndex: 2,
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          color: saved ? 'error.main' : 'text.secondary',
+          boxShadow: 2,
           '&:hover': {
-            backgroundColor: 'rgba(0,0,0,0.6)',
-          }
+            backgroundColor: 'white',
+            transform: 'scale(1.1)',
+          },
+          transition: 'all 0.2s ease-in-out',
+          width: 40,
+          height: 40,
         }}
       >
         {saved ? (
-          <FavoriteIcon sx={{ color: 'red' }} fontSize="small" />
+          <FavoriteIcon fontSize="small" />
         ) : (
-          <FavoriteBorderIcon sx={{ color: 'white' }} fontSize="small" />
+          <FavoriteBorderIcon fontSize="small" />
         )}
       </IconButton>
 
-      <Card sx={{ width: '100%', borderRadius: 3 }}>
-        <CardActionArea onClick={handleCardClick}>
+      <Card
+        sx={{
+          width: '100%',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: 4,
+          }
+        }}
+        onClick={handleCardClick}
+      >
+        <Box sx={{ position: 'relative', overflow: 'hidden' }}>
           <CardMedia
             component="img"
-            height="140"
-            image={item.photos?.[0]?.url || 'https://placehold.co/600x400/EEE/31343C?text=Photo'}
+            height="200"
+            image={item.photos?.[0]?.url || 'https://placehold.co/400x300/F7F7F7/CCCCCC?text=No+Photo'}
             alt={item.name}
-            sx={{ backgroundColor: '#EFEFEF' }}
+            sx={{
+              backgroundColor: 'grey.50',
+              transition: 'transform 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'scale(1.05)',
+              }
+            }}
           />
-          <CardContent>
-            <Typography gutterBottom variant="h6" component="div" noWrap>
-              {item.name}
+          {item.rating && (
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 8,
+                left: 8,
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              <Typography variant="caption">★</Typography>
+              <Typography variant="caption">{item.rating}</Typography>
+            </Box>
+          )}
+        </Box>
+        <CardContent sx={{ p: 2 }}>
+          <Typography
+            variant="h6"
+            component="div"
+            noWrap
+            sx={{
+              fontWeight: 600,
+              mb: 0.5,
+              color: 'text.primary',
+              fontSize: '1rem'
+            }}
+          >
+            {item.name}
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 1.5 }}
+          >
+            {item.city}
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+              ₹{item.price}
+              <Typography component="span" variant="caption" sx={{ fontWeight: 400, color: 'text.secondary' }}>
+                /month
+              </Typography>
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {item.city}
-            </Typography>
-          </CardContent>
-        </CardActionArea>
+            {item.propertyType && (
+              <Chip
+                label={item.propertyType}
+                size="small"
+                sx={{
+                  backgroundColor: 'grey.100',
+                  color: 'text.secondary',
+                  fontSize: '0.7rem',
+                  height: 24,
+                }}
+              />
+            )}
+          </Box>
+        </CardContent>
       </Card>
     </Box>
   );

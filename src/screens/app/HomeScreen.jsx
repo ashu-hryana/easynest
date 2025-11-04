@@ -2,20 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    Container, 
-    Box, 
-    Typography, 
-    TextField, 
-    InputAdornment, 
-    Chip, 
-    CircularProgress, 
-    Grid, 
+import {
+    Container,
+    Box,
+    Typography,
+    TextField,
+    InputAdornment,
+    Chip,
+    CircularProgress,
+    Grid,
     Stack,
     IconButton,
-    Tooltip
+    Tooltip,
+    Button,
+    Fade
 } from '@mui/material';
-import { Search, FavoriteBorder } from '@mui/icons-material';
+import { Search, FavoriteBorder, MyLocation, Tune } from '@mui/icons-material';
+
+import AdvancedSearchModal from '../../components/search/AdvancedSearchModal';
+import { searchProperties, getCurrentLocation, getPopularAreas } from '../../services/searchService';
 
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -31,6 +36,11 @@ const HomeScreen = () => {
     const [listings, setListings] = useState([]);
     const [searchText, setSearchText] = useState('');
     const [activeFilter, setActiveFilter] = useState('Near You');
+    const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [appliedFilters, setAppliedFilters] = useState({});
+    const [popularAreas, setPopularAreas] = useState([]);
+    const [userLocation, setUserLocation] = useState(null);
 
     useEffect(() => {
         const listingsCollectionRef = collection(db, 'listings');
@@ -58,13 +68,68 @@ const HomeScreen = () => {
             setLoading(false);
         });
 
+        // Get popular areas from listings
+        const areas = getPopularAreas(listingsArray);
+        setPopularAreas(areas);
+
         return () => unsubscribe();
     }, []);
 
-    const handleSearchSubmit = (e) => {
+    // Get user location on mount
+    useEffect(() => {
+        const getUserLocation = async () => {
+            try {
+                const location = await getCurrentLocation();
+                setUserLocation(location);
+            } catch (error) {
+                console.log('Location access denied or unavailable');
+            }
+        };
+        getUserLocation();
+    }, []);
+
+    const handleSearchSubmit = async (e) => {
         e.preventDefault();
         if (searchText.trim()) {
-            navigate(`/search?q=${searchText.trim()}`);
+            setSearchLoading(true);
+            try {
+                const searchResult = await searchProperties(searchText.trim(), {
+                    ...appliedFilters,
+                    useCurrentLocation: !searchText.trim()
+                });
+                navigate(`/search?q=${searchText.trim()}&filters=${encodeURIComponent(JSON.stringify(appliedFilters))}`);
+            } catch (error) {
+                console.error('Search error:', error);
+            } finally {
+                setSearchLoading(false);
+            }
+        }
+    };
+
+    const handleAdvancedSearch = () => {
+        setAdvancedSearchOpen(true);
+    };
+
+    const handleApplyFilters = (filters) => {
+        setAppliedFilters(filters);
+        // Trigger search with new filters
+        const query = searchText.trim() || 'Near Me';
+        navigate(`/search?q=${query}&filters=${encodeURIComponent(JSON.stringify(filters))}`);
+    };
+
+    const handleNearMeSearch = async () => {
+        if (!userLocation) {
+            try {
+                const location = await getCurrentLocation();
+                setUserLocation(location);
+                navigate('/search?useLocation=true');
+            } catch (error) {
+                console.error('Could not get location:', error);
+                // Fallback to location-based search
+                setSearchText('Near Me');
+            }
+        } else {
+            navigate('/search?useLocation=true');
         }
     };
 
@@ -80,72 +145,283 @@ const HomeScreen = () => {
     const newListings = listings.slice(4);
 
     return (
-        <Box sx={{ flexGrow: 1, backgroundColor: '#F8F9FA', pb: '80px' }}>
-            <Container maxWidth="lg" sx={{ pt: 2, px: { xs: 1, sm: 2 } }}>
-                <Stack 
-                    direction="row" 
-                    spacing={1} 
-                    alignItems="center" 
-                    component="form" 
-                    onSubmit={handleSearchSubmit} 
-                    sx={{ mb: 1 }}
+        <Box sx={{ flexGrow: 1, backgroundColor: 'background.default', minHeight: '100vh', pb: { xs: '80px', md: 0 } }}>
+            <Container maxWidth="md" sx={{ pt: { xs: 2, md: 3 }, px: { xs: 2, md: 3 } }}>
+                {/* Header Section */}
+                <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
+                        Hi there! 👋
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'text.secondary', mb: 3 }}>
+                        Find your perfect rental
+                    </Typography>
+                </Box>
+
+                {/* Enhanced Search Section */}
+                <Box
+                    component="form"
+                    onSubmit={handleSearchSubmit}
+                    sx={{ mb: 3 }}
                 >
                     <TextField
                         fullWidth
                         variant="outlined"
-                        placeholder="Search by college, city, or locality..."
+                        placeholder="Search by location, college, or property..."
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
+                        disabled={searchLoading}
                         InputProps={{
-                            startAdornment: (<InputAdornment position="start"><Search /></InputAdornment>),
-                            sx: { borderRadius: '25px', backgroundColor: 'white' }
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search sx={{ color: 'text.secondary' }} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end" sx={{ gap: 0.5 }}>
+                                    <Tooltip title="Search near me">
+                                        <IconButton
+                                            onClick={handleNearMeSearch}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: userLocation ? 'primary.50' : 'grey.50',
+                                                color: userLocation ? 'primary.main' : 'text.secondary',
+                                                '&:hover': { bgcolor: userLocation ? 'primary.100' : 'grey.100' }
+                                            }}
+                                        >
+                                            <MyLocation fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Advanced search">
+                                        <IconButton
+                                            onClick={handleAdvancedSearch}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: 'grey.50',
+                                                '&:hover': { bgcolor: 'grey.100' }
+                                            }}
+                                        >
+                                            <Tune fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="View Wishlist">
+                                        <IconButton
+                                            onClick={() => navigate('/wishlist')}
+                                            sx={{
+                                                bgcolor: 'grey.50',
+                                                '&:hover': { bgcolor: 'grey.100' }
+                                            }}
+                                        >
+                                            <FavoriteBorder />
+                                        </IconButton>
+                                    </Tooltip>
+                                </InputAdornment>
+                            ),
+                            sx: {
+                                borderRadius: 3,
+                                backgroundColor: 'background.paper',
+                                boxShadow: 1,
+                                '&:hover': { boxShadow: 2 },
+                                '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                            }
                         }}
+                        sx={{ mb: 2 }}
                     />
-                    <Tooltip title="View Wishlist">
-                        <IconButton onClick={() => navigate('/wishlist')} sx={{ bgcolor: 'white', p: 1.5, boxShadow: 1 }}>
-                            <FavoriteBorder />
-                        </IconButton>
-                    </Tooltip>
-                </Stack>
 
-                <Box sx={{ display: 'flex', overflowX: 'auto', py: 2, '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
+                    {/* Quick Actions */}
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<MyLocation />}
+                            onClick={handleNearMeSearch}
+                            sx={{ borderRadius: 2, textTransform: 'none' }}
+                        >
+                            Near Me
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Tune />}
+                            onClick={handleAdvancedSearch}
+                            sx={{ borderRadius: 2, textTransform: 'none' }}
+                        >
+                            Filters
+                        </Button>
+                        {Object.keys(appliedFilters).length > 0 && (
+                            <Chip
+                                label={`${Object.keys(appliedFilters).length} filters applied`}
+                                color="primary"
+                                size="small"
+                                onDelete={() => setAppliedFilters({})}
+                                sx={{ borderRadius: 2 }}
+                            />
+                        )}
+                    </Box>
+                </Box>
+
+                {/* Filter Chips */}
+                <Box sx={{
+                    display: 'flex',
+                    overflowX: 'auto',
+                    py: 1,
+                    mb: 3,
+                    gap: 2,
+                    '&::-webkit-scrollbar': { display: 'none' },
+                    scrollbarWidth: 'none'
+                }}>
                     {FILTERS.map((filter) => (
                         <Chip
                             key={filter}
                             label={filter}
                             onClick={() => setActiveFilter(filter)}
                             sx={{
-                                mr: 1,
                                 flexShrink: 0,
-                                backgroundColor: activeFilter === filter ? 'black' : '#e0e0e0',
-                                color: activeFilter === filter ? 'white' : 'black',
-                                '&:hover': { backgroundColor: activeFilter === filter ? '#333' : '#d1d1d1' }
+                                backgroundColor: activeFilter === filter ? 'primary.main' : 'grey.100',
+                                color: activeFilter === filter ? 'white' : 'text.primary',
+                                fontWeight: activeFilter === filter ? 600 : 500,
+                                '&:hover': {
+                                    backgroundColor: activeFilter === filter ? 'primary.dark' : 'grey.200'
+                                },
+                                px: 2,
+                                py: 1,
                             }}
                         />
                     ))}
                 </Box>
-                
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>Featured Stays</Typography>
-                    <Box sx={{ display: 'flex', overflowX: 'auto', py: 2, gap: 2, '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
-                        {featuredListings.map(item => (
-                            <Box key={item.id} sx={{ flex: '0 0 85%', maxWidth: '320px' }}>
-                                <FeaturedCard item={item} />
-                            </Box>
-                        ))}
-                    </Box>
-                </Box>
 
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>New on EasyNest</Typography>
-                    <Grid container spacing={2}>
-                        {newListings.map(item => (
-                            <Grid item key={item.id} xs={12} sm={6}>
-                                <ListingRow item={item} />
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+                {/* Featured Stays Section */}
+                {featuredListings.length > 0 && (
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
+                            Featured Stays
+                        </Typography>
+                        <Box sx={{
+                            display: 'flex',
+                            overflowX: 'auto',
+                            gap: 3,
+                            pb: 1,
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            scrollbarWidth: 'none'
+                        }}>
+                            {featuredListings.map(item => (
+                                <Box key={item.id} sx={{
+                                    flex: { xs: '0 0 75%', sm: '0 0 60%', md: '0 0 40%' },
+                                    maxWidth: '380px'
+                                }}>
+                                    <FeaturedCard item={item} />
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                )}
+
+                {/* New Listings Section */}
+                {newListings.length > 0 && (
+                    <Box>
+                        <Typography variant="h4" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
+                            New on EasyNest
+                        </Typography>
+                        <Grid container spacing={3}>
+                            {newListings.slice(0, 6).map(item => (
+                                <Grid item key={item.id} xs={12} sm={6} md={4}>
+                                    <ListingRow item={item} />
+                                </Grid>
+                            ))}
+                        </Grid>
+
+                        {newListings.length > 6 && (
+                            <Box sx={{ textAlign: 'center', mt: 3 }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => navigate('/search')}
+                                    sx={{
+                                        borderRadius: 3,
+                                        px: 4,
+                                        py: 1.5,
+                                        fontWeight: 500
+                                    }}
+                                >
+                                    View all properties
+                                </Button>
+                            </Box>
+                        )}
+                    </Box>
+                )}
+
+                {/* Popular Areas Section */}
+                {popularAreas.length > 0 && (
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
+                            Popular Areas
+                        </Typography>
+                        <Box sx={{
+                            display: 'flex',
+                            overflowX: 'auto',
+                            gap: 2,
+                            pb: 1,
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            scrollbarWidth: 'none'
+                        }}>
+                            {popularAreas.slice(0, 6).map((area, index) => (
+                                <Box
+                                    key={area.area}
+                                    onClick={() => {
+                                        setSearchText(area.area);
+                                        navigate(`/search?q=${encodeURIComponent(area.area)}`);
+                                    }}
+                                    sx={{
+                                        flex: '0 0 auto',
+                                        p: 2,
+                                        bgcolor: 'grey.50',
+                                        borderRadius: 2,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease-in-out',
+                                        '&:hover': {
+                                            bgcolor: 'primary.50',
+                                            transform: 'translateY(-2px)'
+                                        },
+                                        minWidth: '120px',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
+                                        {area.area}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        {area.count} properties
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                )}
+
+                {/* Empty State */}
+                {!loading && listings.length === 0 && (
+                    <Box sx={{ textAlign: 'center', py: 8 }}>
+                        <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
+                            No properties available yet
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                            Check back soon for new listings!
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            onClick={handleAdvancedSearch}
+                            sx={{ borderRadius: 3 }}
+                        >
+                            Try Advanced Search
+                        </Button>
+                    </Box>
+                )}
+
+                {/* Advanced Search Modal */}
+                <AdvancedSearchModal
+                    open={advancedSearchOpen}
+                    onClose={() => setAdvancedSearchOpen(false)}
+                    onApplyFilters={handleApplyFilters}
+                    initialFilters={appliedFilters}
+                />
             </Container>
         </Box>
     );
