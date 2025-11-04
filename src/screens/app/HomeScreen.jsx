@@ -36,6 +36,11 @@ const HomeScreen = () => {
     const [listings, setListings] = useState([]);
     const [searchText, setSearchText] = useState('');
     const [activeFilter, setActiveFilter] = useState('Near You');
+    const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [appliedFilters, setAppliedFilters] = useState({});
+    const [popularAreas, setPopularAreas] = useState([]);
+    const [userLocation, setUserLocation] = useState(null);
 
     useEffect(() => {
         const listingsCollectionRef = collection(db, 'listings');
