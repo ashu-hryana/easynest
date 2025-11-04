@@ -52,12 +52,61 @@ import { useNotification } from '../../contexts/NotificationContext.jsx';
 import { phoneVerificationService } from '../../services/phoneVerification.js';
 
 const OwnerSignUpScreen = () => {
+    const theme = useTheme();
+    const navigate = useNavigate();
+    const { showNotification } = useNotification();
+
+    // Stepper state
+    const [activeStep, setActiveStep] = useState(0);
+    const steps = ['Basic Info', 'Business Details', 'Verification', 'Complete'];
+
+    // Basic info
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const navigate = useNavigate();
-    const { showNotification } = useNotification();
+    const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+
+    // Business details (owner-specific)
+    const [businessName, setBusinessName] = useState('');
+    const [businessType, setBusinessType] = useState('individual');
+    const [propertyCount, setPropertyCount] = useState('');
+    const [businessAddress, setBusinessAddress] = useState('');
+    const [businessDescription, setBusinessDescription] = useState('');
+
+    // Contact details
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [countryCode, setCountryCode] = useState('+91');
+    const [nationality, setNationality] = useState('IN');
+    const [dateOfBirth, setDateOfBirth] = useState('');
+    const [gender, setGender] = useState('');
+
+    // Phone verification
+    const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+    const [otpSessionId, setOtpSessionId] = useState('');
+    const [otp, setOtp] = useState('');
+    const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [otpResendLoading, setOtpResendLoading] = useState(false);
+    const [otpError, setOtpError] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+
+    // Loading states
+    const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
+
+    // Form validation errors
+    const [errors, setErrors] = useState({});
+
+    const countryList = phoneVerificationService.getCountryList();
+    const nationalities = phoneVerificationService.getNationalities();
+    const businessTypes = [
+        { value: 'individual', label: 'Individual Owner', icon: <Person /> },
+        { value: 'small', label: 'Small Business', icon: <Business /> },
+        { value: 'medium', label: 'Medium Business', icon: <Business /> },
+        { value: 'large', label: 'Large Enterprise', icon: <Business /> }
+    ];
 
     const handleEmailSignUp = async () => {
         if (!fullName || !email || !password) {
