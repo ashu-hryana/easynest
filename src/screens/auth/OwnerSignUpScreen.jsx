@@ -1,15 +1,55 @@
 // /src/screens/auth/OwnerSignUpScreen.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { Box, Typography, Button, Container, TextField, IconButton, InputAdornment, Divider, Link } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Visibility, VisibilityOff } from '@mui/icons-material';
-import GoogleIcon from '@mui/icons-material/Google';
+import {
+    Box,
+    Typography,
+    Button,
+    Container,
+    TextField,
+    IconButton,
+    InputAdornment,
+    Divider,
+    Link,
+    Stepper,
+    Step,
+    StepLabel,
+    Paper,
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel,
+    Chip,
+    Alert,
+    CircularProgress,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    useTheme,
+    alpha
+} from '@mui/material';
+import {
+    ArrowBack as ArrowBackIcon,
+    Visibility,
+    VisibilityOff,
+    Google as GoogleIcon,
+    Phone,
+    CheckCircle,
+    Refresh,
+    Business,
+    Home,
+    Person,
+    LocationOn,
+    Language
+} from '@mui/icons-material';
 
-// Firebase Web SDK se zaroori functions import karo
+// Firebase imports
 import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from '../../firebase';
 import { useNotification } from '../../contexts/NotificationContext.jsx';
+import { phoneVerificationService } from '../../services/phoneVerification.js';
 
 const OwnerSignUpScreen = () => {
     const [fullName, setFullName] = useState('');
