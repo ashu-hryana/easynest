@@ -1,6 +1,6 @@
 // src/main.jsx (Updated with ConnectionProvider)
 
-import 'virtual:pwa-register'
+// import 'virtual:pwa-register'
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
