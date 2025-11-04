@@ -1,13 +1,36 @@
 // src/screens/app/RoommateFinderScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Box, Typography, CircularProgress, Grid, TextField, InputAdornment, Fab, Stack, Tooltip } from '@mui/material';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import {
+    Container,
+    Box,
+    Typography,
+    CircularProgress,
+    Grid,
+    TextField,
+    InputAdornment,
+    Fab,
+    Stack,
+    Tooltip,
+    Chip,
+    Button,
+    Paper,
+    IconButton,
+    Menu,
+    MenuItem,
+    Fade,
+    useTheme,
+    alpha,
+    Badge
+} from '@mui/material';
+import { collection, query, onSnapshot, orderBy, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { Search, Add, ConnectWithoutContact } from '@mui/icons-material';
+import { Search, Add, FilterList, Person, Home, AccountBalanceWallet, LocationOn, Schedule } from '@mui/icons-material';
+import { format } from 'date-fns';
 
 import RoommatePostCard from '../../components/roommates/RoommatePostCard';
+import RoommateSearchFilters from '../../components/roommates/RoommateSearchFilters';
 
 const RoommateFinderScreen = () => {
     const navigate = useNavigate();
