@@ -36,7 +36,7 @@ import {
     SmokingRooms,
     LocalBar,
     AccountCircle,
-    PhoneVerified,
+    VerifiedUser,
     PhotoCamera,
     Close,
     CloudUpload,
