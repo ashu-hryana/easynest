@@ -208,44 +208,276 @@ const RoommateFinderScreen = () => {
     }
 
     return (
-        <Box sx={{ flexGrow: 1 }}>
-            <Container maxWidth="lg" sx={{ py: 3, pb: 12 /* Floating buttons ke liye jagah */ }}>
-                <Box sx={{ mb: 4, textAlign: 'center' }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Find Your Perfect Roommate</Typography>
-                    <Typography color="text.secondary">Browse posts from students looking for rooms and roommates.</Typography>
-                </Box>
+        <Box sx={{ flexGrow: 1, backgroundColor: 'background.default', minHeight: '100vh', pb: { xs: '80px', md: 0 } }}>
+            <Container maxWidth="lg" sx={{ pt: 3, px: { xs: 2, md: 3 } }}>
+                {/* Header Section */}
+                <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
+                        Find Your Perfect Roommate 🤝
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'text.secondary', mb: 3 }}>
+                        Connect with students looking for rooms and roommates
+                    </Typography>
 
-                <Box sx={{ mb: 4 }}>
-                    <TextField fullWidth placeholder="Search posts by name, location, or preferences..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: (<InputAdornment position="start"><Search /></InputAdornment>), sx: { borderRadius: '25px' } }} />
-                </Box>
-
-                <Grid container spacing={3}>
-                    {filteredPosts.map(post => (
-                        <Grid item key={post.id} xs={12} sm={6} md={4} lg={3}>
-                            <RoommatePostCard post={post} />
+                    {/* Stats Cards */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={6} sm={3}>
+                            <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: alpha(theme.palette.primary.main, 0.1) }}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                    {stats.totalPosts}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Active Posts
+                                </Typography>
+                            </Paper>
                         </Grid>
-                    ))}
-                </Grid>
-            </Container>
-            
-            {/* --- YEH HAI CORRECTED FLOATING BUTTONS SECTION --- */}
-            <Stack spacing={2} sx={{ position: 'fixed', bottom: 80, right: 30, alignItems: 'flex-end' }}>
-                
+                        <Grid item xs={6} sm={3}>
+                            <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: alpha(theme.palette.success.main, 0.1) }}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
+                                    {stats.activeToday}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Active Today
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                            <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: alpha(theme.palette.info.main, 0.1) }}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
+                                    {stats.newThisWeek}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    New This Week
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                            <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: alpha(theme.palette.warning.main, 0.1) }}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
+                                    ₹{stats.avgBudget}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Avg. Budget
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                    </Grid>
+                </Box>
 
-                {/* 'Add Post' ka button sirf tab dikhega jab post na ho */}
+                {/* Search and Filters Section */}
+                <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+                    <TextField
+                        fullWidth
+                        variant="outlined"
+                        placeholder="Search by name, location, college, or preferences..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search sx={{ color: 'text.secondary' }} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <Tooltip title="Advanced Filters">
+                                        <IconButton onClick={() => setFiltersOpen(true)}>
+                                            <Badge badgeContent={getActiveFiltersCount()} color="primary">
+                                                <FilterList />
+                                            </Badge>
+                                        </IconButton>
+                                    </Tooltip>
+                                </InputAdornment>
+                            ),
+                            sx: {
+                                borderRadius: 3,
+                                backgroundColor: 'grey.50',
+                                '&:hover': { backgroundColor: 'grey.100' },
+                                '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                            }
+                        }}
+                    />
+
+                    {/* Quick Filters */}
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
+                        <Chip
+                            label="Looking for Room"
+                            clickable
+                            color={activeFilters.lookingFor === 'room' ? 'primary' : 'default'}
+                            onClick={() => setActiveFilters(prev => ({
+                                ...prev,
+                                lookingFor: prev.lookingFor === 'room' ? '' : 'room'
+                            }))}
+                            icon={<Home />}
+                        />
+                        <Chip
+                            label="Has Room"
+                            clickable
+                            color={activeFilters.lookingFor === 'only_roommate' ? 'primary' : 'default'}
+                            onClick={() => setActiveFilters(prev => ({
+                                ...prev,
+                                lookingFor: prev.lookingFor === 'only_roommate' ? '' : 'only_roommate'
+                            }))}
+                            icon={<Person />}
+                        />
+                        <Chip
+                            label="Budget: ≤10k"
+                            clickable
+                            color={activeFilters.budgetRange[1] === 10000 ? 'primary' : 'default'}
+                            onClick={() => setActiveFilters(prev => ({
+                                ...prev,
+                                budgetRange: prev.budgetRange[1] === 10000 ? [0, 50000] : [0, 10000]
+                            }))}
+                            icon={<AccountBalanceWallet />}
+                        />
+                        <Chip
+                            label="Near Me"
+                            clickable
+                            onClick={() => {
+                                // Implement location-based filter
+                                setActiveFilters(prev => ({ ...prev, location: 'near me' }));
+                            }}
+                            icon={<LocationOn />}
+                        />
+                    </Box>
+
+                    {/* Sort Options */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            {filteredAndSortedPosts.length} {filteredAndSortedPosts.length === 1 ? 'result' : 'results'} found
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Typography variant="caption" color="text.secondary">Sort by:</Typography>
+                            <Chip
+                                label="Recent"
+                                size="small"
+                                clickable
+                                color={sortBy === 'recent' ? 'primary' : 'default'}
+                                onClick={() => setSortBy('recent')}
+                            />
+                            <Chip
+                                label="Budget"
+                                size="small"
+                                clickable
+                                color={sortBy === 'budget_low' ? 'primary' : 'default'}
+                                onClick={() => setSortBy('budget_low')}
+                            />
+                        </Box>
+                    </Box>
+
+                    {getActiveFiltersCount() > 0 && (
+                        <Box sx={{ mt: 2, p: 2, backgroundColor: alpha(theme.palette.primary.main, 0.1), borderRadius: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="subtitle2">
+                                    {getActiveFiltersCount()} filter{getActiveFiltersCount() > 1 ? 's' : ''} applied
+                                </Typography>
+                                <Button size="small" onClick={clearFilters}>
+                                    Clear all
+                                </Button>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {activeFilters.lookingFor && (
+                                    <Chip
+                                        label={`Looking for: ${activeFilters.lookingFor}`}
+                                        onDelete={() => setActiveFilters(prev => ({ ...prev, lookingFor: '' }))}
+                                        size="small"
+                                    />
+                                )}
+                                {activeFilters.location && (
+                                    <Chip
+                                        label={`Location: ${activeFilters.location}`}
+                                        onDelete={() => setActiveFilters(prev => ({ ...prev, location: '' }))}
+                                        size="small"
+                                    />
+                                )}
+                                {activeFilters.gender && (
+                                    <Chip
+                                        label={`Gender: ${activeFilters.gender}`}
+                                        onDelete={() => setActiveFilters(prev => ({ ...prev, gender: '' }))}
+                                        size="small"
+                                    />
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                </Paper>
+
+                {/* Results Section */}
+                {filteredAndSortedPosts.length === 0 ? (
+                    <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
+                            No roommate posts found
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                            Try adjusting your filters or search terms
+                        </Typography>
+                        <Button variant="outlined" onClick={clearFilters} sx={{ mr: 2 }}>
+                            Clear Filters
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate('/roommates/create')}
+                            disabled={!!myPost}
+                        >
+                            Create Post
+                        </Button>
+                    </Paper>
+                ) : (
+                    <Grid container spacing={3}>
+                        {filteredAndSortedPosts.map(post => (
+                            <Fade in key={post.id} timeout={300}>
+                                <Grid item xs={12} sm={6} md={4} lg={3}>
+                                    <RoommatePostCard post={post} />
+                                </Grid>
+                            </Fade>
+                        ))}
+                    </Grid>
+                )}
+            </Container>
+
+            {/* Floating Action Buttons */}
+            <Stack spacing={2} sx={{ position: 'fixed', bottom: { xs: 90, md: 30 }, right: 20, alignItems: 'flex-end' }}>
+                {/* Edit Post Button */}
+                {myPost && (
+                    <Tooltip title="Edit Your Post">
+                        <Fab
+                            color="secondary"
+                            aria-label="edit post"
+                            onClick={() => navigate(`/roommates/edit/${myPost.id}`)}
+                            sx={{ backgroundColor: theme.palette.warning.main }}
+                        >
+                            <Edit />
+                        </Fab>
+                    </Tooltip>
+                )}
+
+                {/* Create Post Button */}
                 {!myPost && (
-                    <Tooltip title="Post Your Requirement">
+                    <Tooltip title="Create Roommate Post">
                         <Fab
                             color="primary"
                             aria-label="add post"
                             onClick={() => navigate('/roommates/create')}
-                            sx={{ backgroundColor: 'black', color: 'white' }}
+                            sx={{
+                                background: 'linear-gradient(135deg, #FF385C 0%, #E01E5A 100%)',
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #E01E5A 0%, #D10134 100%)',
+                                }
+                            }}
                         >
                             <Add />
                         </Fab>
                     </Tooltip>
                 )}
             </Stack>
+
+            {/* Advanced Filters Dialog */}
+            <RoommateSearchFilters
+                open={filtersOpen}
+                onClose={() => setFiltersOpen(false)}
+                filters={activeFilters}
+                onApplyFilters={setActiveFilters}
+            />
         </Box>
     );
 };
